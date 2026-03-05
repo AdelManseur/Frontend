@@ -1,0 +1,57 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  border: 1px solid;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.button {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.info {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.success {
+  margin: 0;
+  font-size: 0.9rem;
+}
