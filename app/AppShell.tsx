@@ -83,20 +83,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   if (isLoading) return <main className="min-h-screen grid place-items-center">Loading...</main>;
-
-  // Not logged -> render normal public pages (landing/login/signup/etc.)
   if (!session?.logged) return <>{children}</>;
 
   return (
-    <main className="h-screen w-screen overflow-hidden bg-[#0f172a] text-white">
+    <main className="h-screen w-screen overflow-hidden bg-[#0b1220] text-white">
       <div className="flex h-full">
         <aside
-          className={`relative h-screen shrink-0 border-r border-white/10 bg-[#0f172a]/95 p-3 backdrop-blur transition-all duration-300 ${
+          className={`relative h-screen shrink-0 border-r border-white/10 bg-[#0b1220] p-3 backdrop-blur transition-all duration-300 ${
             isSidebarCollapsed ? "w-20" : "w-56"
           }`}
         >
           <div className="flex h-full flex-col">
-            {/* collapse / expand button */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((v) => !v)}
@@ -158,9 +155,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <p className="truncate text-xs text-gray-400">{session.user.email}</p>
                     </div>
 
-                    <button className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10">
-                      View profile
-                    </button>
+                    <Link
+                      href="/profile-details"
+                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10"
+                    >
+                      Profile Details
+                    </Link>
                     <button className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10">
                       Account settings
                     </button>
@@ -212,7 +212,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <section className="min-h-0 flex-1 overflow-y-auto p-8">{children}</section>
+        <section className="min-h-0 flex-1 overflow-y-auto bg-[#111827]">
+          <div className="min-h-full px-8 py-8">
+            {children}
+          </div>
+        </section>
       </div>
     </main>
   );

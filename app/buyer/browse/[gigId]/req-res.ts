@@ -1,4 +1,4 @@
-import type { ApiMessageResponse, BuyerGigDetails, GigDetailsResponse } from "./interfaces";
+import type { ApiMessageResponse, BuyerGigDetails, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 
@@ -50,4 +50,25 @@ export async function startChat(sellerId: string, gigId: string): Promise<ApiMes
   const data = await parseJson<ApiMessageResponse>(res);
   if (!res.ok) throw new Error(data?.message || `Failed to start chat (${res.status})`);
   return data ?? { message: "Chat started" };
+}
+
+export async function sendMessageToSeller(
+  payload: SendMessagePayload
+): Promise<SendMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/chat/message`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const raw = await response.text();
+  const isJson = (response.headers.get("content-type") || "").includes("application/json");
+  const data = (isJson && raw ? JSON.parse(raw) : null) as SendMessageResponse | null;
+
+  if (!response.ok) {
+    throw new Error(data?.message || `Failed to send message (${response.status})`);
+  }
+
+  return data ?? { message: "Message sent successfully" };
 }

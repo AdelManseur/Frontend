@@ -34,3 +34,21 @@ export interface ApiMessageResponse {
   conversationId?: string;
   chatId?: string;
 }
+
+export interface SendMessagePayload {
+  from: string;
+  to: string;
+  content: string;
+}
+
+export interface SendMessageResponse {
+  message: string;
+  data?: {
+    _id: string;
+    from: string;
+    to: string;
+    content: string;
+    createdAt: string;
+    read?: boolean;
+  };
+}

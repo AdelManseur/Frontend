@@ -87,68 +87,92 @@ export default function BrowsePage() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold">Browse Gigs</h1>
-      <p className="mt-2 text-gray-400">Find the right service from all sellers.</p>
+    <div className="mx-auto max-w-7xl">
+      <div className="border-b border-white/10 pb-6">
+        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Buyer</p>
+        <h1 className="mt-2 text-3xl font-semibold text-white">Browse Gigs</h1>
+        <p className="mt-2 text-sm text-gray-400">
+          Discover services from other sellers and open any gig for full details.
+        </p>
+      </div>
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search gigs by title, description, or relevant words..."
-          className="w-full rounded-md bg-white/5 px-3 py-2 text-sm outline outline-1 outline-white/10 focus:outline-indigo-500"
-        />
+      <div className="py-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="w-full max-w-2xl">
+            <label htmlFor="browse-search" className="mb-2 block text-sm text-gray-400">
+              Search
+            </label>
+            <div className="flex items-center border-b border-white/10 bg-white/[0.03] px-0 py-2">
+              <input
+                id="browse-search"
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search gigs by title, keyword, or category..."
+                className="w-full bg-transparent px-0 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+              />
+            </div>
+          </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-gray-400">Category</label>
+          <div className="min-w-[220px]">
+            <label htmlFor="category-filter" className="mb-2 block text-sm text-gray-400">
+              Category
+            </label>
             <select
+              id="category-filter"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-md bg-white/5 px-3 py-2 text-sm outline outline-1 outline-white/10 focus:outline-indigo-500"
+              className="w-full border-b border-white/10 bg-transparent py-2 text-sm text-white focus:outline-none"
             >
-              <option value="">All categories</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat} className="text-black">
-                  {cat}
+              <option value="" className="bg-[#111827] text-white">
+                All categories
+              </option>
+              {categories.map((category) => (
+                <option key={category} value={category} className="bg-[#111827] text-white">
+                  {category}
                 </option>
               ))}
             </select>
           </div>
-
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-gray-400">Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {allTags.length === 0 && <span className="text-sm text-gray-500">No tags</span>}
-              {allTags.map((tag) => {
-                const active = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`rounded-full px-3 py-1 text-xs ${
-                      active ? "bg-indigo-500 text-white" : "bg-white/10 text-gray-300 hover:bg-white/20"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
+
+        {!!categories.length && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("")}
+              className={`rounded-full px-3 py-1.5 text-xs transition ${
+                !selectedCategory
+                  ? "bg-indigo-500 text-white"
+                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              All
+            </button>
+
+            {categories.map((category) => {
+              const active = selectedCategory === category;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setSelectedCategory(category)}
+                  className={`rounded-full px-3 py-1.5 text-xs transition ${
+                    active
+                      ? "bg-indigo-500 text-white"
+                      : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
-
-      {/* 2-column grid */}
-      <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-8">
+      <div className="mt-2 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
         {isLoading &&
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="min-h-[260px] animate-pulse rounded-xl border border-white/10 bg-white/5" />

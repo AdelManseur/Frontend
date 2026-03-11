@@ -18,13 +18,35 @@ const initialForm: CreateGigMetadata = {
   images: [],
 };
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className="mb-2 block text-sm text-gray-400">{children}</label>;
+}
+
+function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none ${props.className ?? ""}`}
+    />
+  );
+}
+
+function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none ${props.className ?? ""}`}
+    />
+  );
+}
+
 export default function CreateGigPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<CreateGigMetadata>(initialForm);
   const [tagsInput, setTagsInput] = useState("");
   const [featuresInput, setFeaturesInput] = useState("");
-  const [imagesInput, setImagesInput] = useState(""); // comma-separated URLs
+  const [imagesInput, setImagesInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -72,7 +94,7 @@ export default function CreateGigPage() {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <Link
         href="/seller/your-gigs"
         className="mb-4 inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200"
@@ -81,123 +103,132 @@ export default function CreateGigPage() {
         <span>Back to Your Gigs</span>
       </Link>
 
-      <h1 className="text-3xl font-bold">Create Gig</h1>
-      <p className="mt-2 text-gray-400">Fill the details below to publish your new gig.</p>
+      <div className="border-b border-white/10 pb-8">
+        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Seller</p>
+        <h1 className="mt-2 text-3xl font-semibold text-white">Create Gig</h1>
+        <p className="mt-2 text-sm text-gray-400">
+          Fill the details below to publish your new gig.
+        </p>
+      </div>
 
-      <form onSubmit={onSubmit} className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-white/10 bg-white/5 p-5 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm text-gray-300">Title</label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-            placeholder="I will design your modern landing page"
-          />
-        </div>
+      <form onSubmit={onSubmit} className="space-y-10 py-8">
+        <section className="border-b border-white/10 pb-8">
+          <h2 className="text-lg font-semibold text-white">Basic Information</h2>
+          <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <FieldLabel>Title</FieldLabel>
+              <TextInput
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                placeholder="I will design your modern landing page"
+              />
+            </div>
 
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm text-gray-300">Description</label>
-          <textarea
-            rows={5}
-            value={form.description}
-            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-            placeholder="Describe what you offer, deliverables, and scope..."
-          />
-        </div>
+            <div className="sm:col-span-2">
+              <FieldLabel>Description</FieldLabel>
+              <TextArea
+                rows={5}
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Describe what you offer, deliverables, and scope..."
+              />
+            </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-gray-300">Category</label>
-          <input
-            type="text"
-            value={form.category}
-            onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-            placeholder="Web Design"
-          />
-        </div>
+            <div>
+              <FieldLabel>Category</FieldLabel>
+              <TextInput
+                type="text"
+                value={form.category}
+                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                placeholder="Web Design"
+              />
+            </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-gray-300">Price ($)</label>
-          <input
-            type="number"
-            min={5}
-            value={form.price}
-            onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+            <div>
+              <FieldLabel>Price ($)</FieldLabel>
+              <TextInput
+                type="number"
+                min={5}
+                value={form.price}
+                onChange={(e) => setForm((p) => ({ ...p, price: Number(e.target.value) }))}
+              />
+            </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-gray-300">Delivery Time (days)</label>
-          <input
-            type="number"
-            min={1}
-            value={form.deliveryTime}
-            onChange={(e) => setForm((p) => ({ ...p, deliveryTime: Number(e.target.value) }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+            <div>
+              <FieldLabel>Delivery Time (days)</FieldLabel>
+              <TextInput
+                type="number"
+                min={1}
+                value={form.deliveryTime}
+                onChange={(e) => setForm((p) => ({ ...p, deliveryTime: Number(e.target.value) }))}
+              />
+            </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-gray-300">Revisions</label>
-          <input
-            type="number"
-            min={0}
-            value={form.revisions}
-            onChange={(e) => setForm((p) => ({ ...p, revisions: Number(e.target.value) }))}
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+            <div>
+              <FieldLabel>Revisions</FieldLabel>
+              <TextInput
+                type="number"
+                min={0}
+                value={form.revisions}
+                onChange={(e) => setForm((p) => ({ ...p, revisions: Number(e.target.value) }))}
+              />
+            </div>
+          </div>
+        </section>
 
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm text-gray-300">Tags (comma separated)</label>
-          <input
-            type="text"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="logo, ui, figma"
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+        <section className="border-b border-white/10 pb-8">
+          <h2 className="text-lg font-semibold text-white">Tags & Features</h2>
+          <div className="mt-5 grid grid-cols-1 gap-6">
+            <div>
+              <FieldLabel>Tags (comma separated)</FieldLabel>
+              <TextInput
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="logo, ui, figma"
+              />
+            </div>
 
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm text-gray-300">Features (comma separated)</label>
-          <input
-            type="text"
-            value={featuresInput}
-            onChange={(e) => setFeaturesInput(e.target.value)}
-            placeholder="Responsive design, Source file, Fast delivery"
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+            <div>
+              <FieldLabel>Features (comma separated)</FieldLabel>
+              <TextInput
+                type="text"
+                value={featuresInput}
+                onChange={(e) => setFeaturesInput(e.target.value)}
+                placeholder="Responsive design, Source file, Fast delivery"
+              />
+            </div>
+          </div>
+        </section>
 
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm text-gray-300">Image URLs (comma separated)</label>
-          <input
-            type="text"
-            value={imagesInput}
-            onChange={(e) => setImagesInput(e.target.value)}
-            placeholder="https://..., https://..."
-            className="w-full rounded-md bg-white/5 px-3 py-2 outline outline-1 outline-white/10 focus:outline-indigo-500"
-          />
-        </div>
+        <section className="border-b border-white/10 pb-8">
+          <h2 className="text-lg font-semibold text-white">Images</h2>
+          <div className="mt-5">
+            <FieldLabel>Image URLs (comma separated)</FieldLabel>
+            <TextInput
+              type="text"
+              value={imagesInput}
+              onChange={(e) => setImagesInput(e.target.value)}
+              placeholder="https://..., https://..."
+            />
+          </div>
+        </section>
 
-        {error && <p className="sm:col-span-2 text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
-        <div className="sm:col-span-2 flex justify-end gap-3">
+        <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={() => router.push("/seller/your-gigs")}
-            className="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
+            className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400 disabled:opacity-60"
+            className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
           >
             {isLoading ? "Creating..." : "Create Gig"}
           </button>

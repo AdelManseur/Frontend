@@ -16,8 +16,6 @@ export interface UserProfile {
   _id: string;
   name: string;
   email: string;
-  phone?: string;
-  bday?: string;
   pfp?: string;
   address?: Partial<UserAddress>;
   fieldsOfInterest?: string[];
@@ -39,6 +37,9 @@ export interface UpdateProfileMetadata {
 
   changeFOI: boolean;
   nfieldsOfInterest?: string[];
+
+  changeSpecialized: boolean;
+  nspecializedProfile?: UserSpecializedProfile;
 }
 
 export interface UpdateProfilePayload {
