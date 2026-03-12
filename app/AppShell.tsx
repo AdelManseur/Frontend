@@ -53,11 +53,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const buyerItems = useMemo<NavItem[]>(
     () => [
       { label: "Profile", href: "/buyer/profile" },
-      { label: "Settings", href: "/settings" },
       { label: "Orders", href: "/buyer/orders" },
       { label: "Browse", href: "/buyer/browse" },
       { label: "Saved", href: "/saved" },
-      { label: "Help", href: "/help" },
+      { label: "Chats", href: "/buyer/chats" },
     ],
     []
   );
@@ -69,7 +68,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       { label: "Chats", href: "/seller/chats" },
       { label: "Your Gigs", href: "/seller/your-gigs" },
       { label: "Earnings", href: "/seller/earnings" },
-      { label: "Settings", href: "/settings" },
     ],
     []
   );

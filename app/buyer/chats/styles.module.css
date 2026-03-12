@@ -185,11 +185,4 @@
   .chat {
     min-height: 500px;
   }
-
-  .seenMark {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-top: -2px;
-  margin-right: 8px;
-}
 }

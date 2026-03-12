@@ -45,6 +45,11 @@ export default function SellerChatsPage() {
                 _id: "69aae86a10caabba532cd3ec",
                 name: "Adel Manseur 2",
                 email: "adelmans2005@gmail.com",
+            },
+            {
+                _id: "69ab0a90fca089336aa0a234",
+                name: "Adel Manseur 3",
+                email: "adelmans2005@gmail.com",
             }
         ];
 
@@ -57,12 +62,13 @@ export default function SellerChatsPage() {
               (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             );
 
-            // existing rule: keep only chats initiated by buyer
-            const firstMessage = sorted[0];
-            const firstMessageFromSeller = firstMessage.from === me.user._id;
-            if (firstMessageFromSeller) return null;
+            // Check if FIRST message was sent TO the buyer (not BY the buyer)
+            const firstMessage = conv[0];
+            const firstMessageToBuyer = firstMessage.to === me.user._id;
+            
+            // Skip if seller initiated the chat
+            if (firstMessageToBuyer) return null;
 
-            // NEW: messages by seller sent after the last buyer->seller message
             const lastIncomingIndex = sorted.findLastIndex(
               (m) => m.from === u._id && m.to === me.user._id
             );
@@ -75,7 +81,7 @@ export default function SellerChatsPage() {
                       idx > lastIncomingIndex &&
                       m.from === me.user._id &&
                       m.to === u._id
-                  );
+                );
 
             const mostRecentReadByOther = [...lastMessagesByMeAfterHim]
               .reverse()
@@ -262,7 +268,7 @@ export default function SellerChatsPage() {
                     const mine = m.from === myId;
                     const isSeenMark =
                       mine &&
-                      selected.seenMessageId != null &&
+                      selected?.seenMessageId != null &&
                       m._id === selected.seenMessageId;
 
                     return (
@@ -289,7 +295,6 @@ export default function SellerChatsPage() {
                   })
                 )}
               </div>
-
               <form onSubmit={onSend} className={styles.composer}>
                 <input className={styles.input} value={draft} onChange={(e) => setDraft(e.target.value)} />
                 <button className={styles.send}>Send</button>
