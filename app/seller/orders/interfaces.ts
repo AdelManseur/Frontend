@@ -1,4 +1,4 @@
-export type BuyerOrderStatus =
+export type SellerOrderStatus =
   | "pending"
   | "active"
   | "delivered"
@@ -6,35 +6,35 @@ export type BuyerOrderStatus =
   | "cancelled"
   | "in_revision";
 
-export interface BuyerOrderGig {
+export interface SellerOrderGig {
   title: string;
   images: string[];
   price: number;
   category: string;
 }
 
-export interface BuyerOrderSeller {
+export interface SellerOrderBuyer {
   name: string;
   pfp?: string;
 }
 
-export interface BuyerOrder {
+export interface SellerOrder {
   _id: string;
-  gig: BuyerOrderGig;
-  seller: BuyerOrderSeller;
+  gig: SellerOrderGig;
+  buyer: SellerOrderBuyer;
   price: number;
-  status: BuyerOrderStatus;
+  status: SellerOrderStatus;
   expectedDelivery: string;
   createdAt: string;
 }
 
-export interface BuyerOrdersPagination {
+export interface SellerOrdersPagination {
   currentPage: number;
   totalPages: number;
   totalCount: number;
 }
 
-export interface BuyerOrdersResponse {
-  orders: BuyerOrder[];
-  pagination: BuyerOrdersPagination;
+export interface SellerOrdersResponse {
+  orders: SellerOrder[];
+  pagination: SellerOrdersPagination;
 }

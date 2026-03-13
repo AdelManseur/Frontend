@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getBuyerOrders } from "./req-res";
-import type { BuyerOrder, BuyerOrderStatus } from "./interfaces";
+import { getSellerOrders } from "./req-res";
+import type { SellerOrder, SellerOrderStatus } from "./interfaces";
 
-const STATUS_OPTIONS: Array<{ label: string; value: "all" | BuyerOrderStatus }> = [
+const STATUS_OPTIONS: Array<{ label: string; value: "all" | SellerOrderStatus }> = [
   { label: "All", value: "all" },
   { label: "Pending", value: "pending" },
   { label: "Active", value: "active" },
@@ -21,7 +21,7 @@ function formatDate(value?: string) {
   return date.toLocaleString();
 }
 
-function getStatusClasses(status: BuyerOrderStatus) {
+function getStatusClasses(status: SellerOrderStatus) {
   switch (status) {
     case "pending":
       return "bg-amber-500/15 text-amber-300";
@@ -40,9 +40,9 @@ function getStatusClasses(status: BuyerOrderStatus) {
   }
 }
 
-export default function BuyerOrdersPage() {
-  const [orders, setOrders] = useState<BuyerOrder[]>([]);
-  const [status, setStatus] = useState<"all" | BuyerOrderStatus>("all");
+export default function SellerOrdersPage() {
+  const [orders, setOrders] = useState<SellerOrder[]>([]);
+  const [status, setStatus] = useState<"all" | SellerOrderStatus>("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -58,7 +58,7 @@ export default function BuyerOrdersPage() {
       setError("");
 
       try {
-        const data = await getBuyerOrders({
+        const data = await getSellerOrders({
           status: status === "all" ? undefined : status,
           page,
           limit,
@@ -90,10 +90,10 @@ export default function BuyerOrdersPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="border-b border-white/10 pb-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Buyer</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">Your Orders</h1>
+        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Seller</p>
+        <h1 className="mt-2 text-3xl font-semibold text-white">Seller Orders</h1>
         <p className="mt-2 text-sm text-gray-400">
-          Track all simple orders placed from your account.
+          Track all simple orders placed on your gigs.
         </p>
       </div>
 
@@ -180,20 +180,20 @@ export default function BuyerOrdersPage() {
 
                   <div className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <p className="text-gray-400">Seller</p>
+                      <p className="text-gray-400">Buyer</p>
                       <div className="mt-2 flex items-center gap-3">
-                        {order.seller.pfp ? (
+                        {order.buyer.pfp ? (
                           <img
-                            src={order.seller.pfp}
-                            alt={order.seller.name}
+                            src={order.buyer.pfp}
+                            alt={order.buyer.name}
                             className="h-10 w-10 rounded-full object-cover"
                           />
                         ) : (
                           <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-xs text-gray-300">
-                            {order.seller.name?.charAt(0) || "?"}
+                            {order.buyer.name?.charAt(0) || "?"}
                           </div>
                         )}
-                        <p className="text-white">{order.seller.name}</p>
+                        <p className="text-white">{order.buyer.name}</p>
                       </div>
                     </div>
 

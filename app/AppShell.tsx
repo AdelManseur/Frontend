@@ -64,7 +64,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const sellerItems = useMemo<NavItem[]>(
     () => [
       { label: "Profile", href: "/seller/profile" },
-      { label: "Orders Confirmed", href: "/seller/orders-confirmed" },
+      { label: "Orders Confirmed", href: "/seller/orders" },
       { label: "Chats", href: "/seller/chats" },
       { label: "Your Gigs", href: "/seller/your-gigs" },
       { label: "Earnings", href: "/seller/earnings" },

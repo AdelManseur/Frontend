@@ -1,24 +1,24 @@
-import type { BuyerOrderStatus, BuyerOrdersResponse } from "./interfaces";
+import type { SellerOrdersResponse, SellerOrderStatus } from "./interfaces";
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
-type GetBuyerOrdersParams = {
-  status?: BuyerOrderStatus;
+type GetSellerOrdersParams = {
+  status?: SellerOrderStatus;
   page?: number;
   limit?: number;
 };
 
-export async function getBuyerOrders(
-  params: GetBuyerOrdersParams = {}
-): Promise<BuyerOrdersResponse> {
+export async function getSellerOrders(
+  params: GetSellerOrdersParams = {}
+): Promise<SellerOrdersResponse> {
   const query = new URLSearchParams();
 
   if (params.status) query.set("status", params.status);
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
 
-  const url = `${API_BASE}/simpleorders/buyer${query.toString() ? `?${query}` : ""}`;
+  const url = `${API_BASE}/simpleorders/seller${query.toString() ? `?${query}` : ""}`;
 
   const res = await fetch(url, {
     method: "GET",
@@ -28,7 +28,7 @@ export async function getBuyerOrders(
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(data?.message || data?.error || `Failed to load buyer orders (${res.status})`);
+    throw new Error(data?.message || data?.error || `Failed to load seller orders (${res.status})`);
   }
 
   return {
