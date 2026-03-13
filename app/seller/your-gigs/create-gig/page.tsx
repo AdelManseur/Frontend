@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createGig } from "./res-res";
+import { createGig } from "./req-res";
 import type { CreateGigMetadata } from "./interfaces";
 import Link from "next/link";
 
@@ -16,6 +16,7 @@ const initialForm: CreateGigMetadata = {
   revisions: 0,
   features: [],
   images: [],
+  questions: [],
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -47,6 +48,7 @@ export default function CreateGigPage() {
   const [tagsInput, setTagsInput] = useState("");
   const [featuresInput, setFeaturesInput] = useState("");
   const [imagesInput, setImagesInput] = useState("");
+  const [questions, setQuestions] = useState<string[]>([""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -58,6 +60,18 @@ export default function CreateGigPage() {
     if (!Number.isFinite(form.deliveryTime) || form.deliveryTime < 1) return "Delivery time must be >= 1.";
     if (!Number.isFinite(form.revisions) || form.revisions < 0) return "Revisions cannot be negative.";
     return null;
+  };
+
+  const updateQuestion = (index: number, value: string) => {
+    setQuestions((prev) => prev.map((q, i) => (i === index ? value : q)));
+  };
+
+  const addQuestion = () => {
+    setQuestions((prev) => [...prev, ""]);
+  };
+
+  const removeQuestion = (index: number) => {
+    setQuestions((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== index)));
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -75,6 +89,7 @@ export default function CreateGigPage() {
       const tags = tagsInput.split(",").map((x) => x.trim()).filter(Boolean);
       const features = featuresInput.split(",").map((x) => x.trim()).filter(Boolean);
       const images = imagesInput.split(",").map((x) => x.trim()).filter(Boolean);
+      const cleanedQuestions = questions.map((x) => x.trim()).filter(Boolean);
 
       await createGig({
         metadata: {
@@ -82,6 +97,7 @@ export default function CreateGigPage() {
           tags,
           features,
           images,
+          questions: cleanedQuestions,
         },
       });
 
@@ -199,6 +215,49 @@ export default function CreateGigPage() {
                 placeholder="Responsive design, Source file, Fast delivery"
               />
             </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/10 pb-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Buyer Questions</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Add the questions buyers should answer before ordering.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={addQuestion}
+              className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
+            >
+              + Add Question
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-5">
+            {questions.map((question, index) => (
+              <div key={index} className="flex items-end gap-3">
+                <div className="flex-1">
+                  <FieldLabel>Question {index + 1}</FieldLabel>
+                  <TextInput
+                    type="text"
+                    value={question}
+                    onChange={(e) => updateQuestion(index, e.target.value)}
+                    placeholder="Example: What style or color palette do you prefer?"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeQuestion(index)}
+                  className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-300 hover:bg-red-500/20"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
           </div>
         </section>
 

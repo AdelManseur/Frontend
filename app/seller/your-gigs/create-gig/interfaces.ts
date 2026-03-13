@@ -4,10 +4,11 @@ export interface CreateGigMetadata {
   category: string;
   tags: string[];
   price: number;
-  deliveryTime: number; // matches backend controller
+  deliveryTime: number;
   revisions: number;
   features: string[];
-  images: string[]; // image URLs (not File objects)
+  images: string[];
+  questions: string[];
 }
 
 export interface CreateGigRequest {
@@ -33,7 +34,7 @@ export interface CreatedGig {
 export interface CreateGigSuccessResponse {
   message: string;
   gig?: CreatedGig;
-  data?: CreatedGig; // supports common backend response variants
+  data?: CreatedGig;
 }
 
 export interface ApiErrorResponse {

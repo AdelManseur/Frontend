@@ -1,4 +1,4 @@
-import type { ApiMessageResponse, BuyerGigDetails, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
+import type { ApiMessageResponse, BuyerGigDetails, CreateSimpleOrderPayload, CreateSimpleOrderResponse, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 
@@ -72,3 +72,80 @@ export async function sendMessageToSeller(
 
   return data ?? { message: "Message sent successfully" };
 }
+
+export async function createSimpleOrder(payload: CreateSimpleOrderPayload): Promise<CreateSimpleOrderResponse> {
+  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
+  const url = `${base}/simpleorders`; // important: use documented route
+
+  console.log("[createSimpleOrder] URL:", url);
+  console.log("[createSimpleOrder] Payload:", payload);
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const raw = await res.text();
+  let data: CreateSimpleOrderResponse | { message?: string } | null = null;
+
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = null;
+  }
+
+  console.log("[createSimpleOrder] Status:", res.status);
+  console.log("[createSimpleOrder] Raw response:", raw);
+  console.log("[createSimpleOrder] Parsed response:", data);
+
+  if (!res.ok) {
+    throw new Error(
+      data && "message" in data && data.message
+        ? data.message
+        : `Failed to create simple order (${res.status})`
+    );
+  }
+
+  return data as CreateSimpleOrderResponse;
+}
+
+/*export async function createSimpleOrder(payload: any) {
+  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
+  const url = `${base}/simpleorders`;
+
+  console.log("[createSimpleOrder] URL:", url);
+  console.log("[createSimpleOrder] Payload:", payload);
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const raw = await res.text();
+  let data: any = null;
+
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = null;
+  }
+
+  console.log("[createSimpleOrder] Status:", res.status);
+  console.log("[createSimpleOrder] Raw response:", raw);
+  console.log("[createSimpleOrder] Parsed response:", data);
+
+  if (!res.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      raw ||
+      `Failed to create simple order (${res.status})`
+    );
+  }
+
+  return data;
+}*/

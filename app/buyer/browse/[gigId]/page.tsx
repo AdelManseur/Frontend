@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { createOrder, getGigDetails, startChat } from "./req-res";
+import { createSimpleOrder, getGigDetails, startChat } from "./req-res";
 import type { BuyerGigDetails } from "./interfaces";
 import { getMe } from "@/app/req-res";
 import { sendMessageToSeller } from "./req-res";
@@ -23,6 +23,11 @@ export default function BuyerGigExpandedPage() {
   const [showContactBox, setShowContactBox] = useState(false);
   const [contactMessage, setContactMessage] = useState("");
   const [isSendingContact, setIsSendingContact] = useState(false);
+  const [showFaqForm, setShowFaqForm] = useState(false);
+  const [faqAnswers, setFaqAnswers] = useState<string[]>([]);
+  const [customSpecifications, setCustomSpecifications] = useState("");
+
+  const [showOrderConfirm, setShowOrderConfirm] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -45,21 +50,66 @@ export default function BuyerGigExpandedPage() {
   }, [gigId]);
 
   const onOrder = async () => {
-    if (!gig) return;
+    if (!gig?._id) return;
+
     setError("");
     setSuccess("");
     setIsOrdering(true);
+
     try {
-      const res = await createOrder(gig._id);
-      setSuccess(res.message || "Order created.");
+      const requirements = [
+        ...questions.map((q, i) => ({
+          question: q,
+          answer: (faqAnswers[i] ?? "").trim(),
+        })),
+        {
+          question: "Custom Specifications",
+          answer: customSpecifications.trim() || "No additional specifications",
+        },
+      ];
+
+      const price = Number((gig as any).price ?? 0);
+      const deliveryTime = Number((gig as any).deliveryTime ?? 1);
+      const revisions = Number((gig as any).revisions ?? 0);
+      const currency = "USD";
+      const started = new Date().toISOString();
+
+      const payload = {
+        gigId: gig._id,
+        requirements,
+        price,
+        currency,
+        deliveryTime,
+        revisions,
+        status: "pending" as const,
+        payment: {
+          amount: price,
+          currency,
+          status: "pending" as const,
+        },
+        timeline: {
+          started,
+        },
+      };
+
+      console.log("[BuyerGigExpandedPage] createSimpleOrder payload:", payload);
+
+      const res = await createSimpleOrder(payload);
+
+      console.log("[BuyerGigExpandedPage] createSimpleOrder success:", res);
+
+      setSuccess(res.message || "Order created successfully");
+      setShowOrderConfirm(false);
+      setShowFaqForm(false);
     } catch (e) {
+      console.error("[BuyerGigExpandedPage] createSimpleOrder error:", e);
       setError(e instanceof Error ? e.message : "Failed to create order.");
     } finally {
       setIsOrdering(false);
     }
   };
 
-  const onStartChat = async () => {
+  /*const onStartChat = async () => {
     if (!gig) return;
     setError("");
     setSuccess("");
@@ -72,7 +122,7 @@ export default function BuyerGigExpandedPage() {
     } finally {
       setIsStartingChat(false);
     }
-  };
+  };*/
 
   const resolveSellerId = (g: unknown): string => {
     const gigAny = g as any;
@@ -127,7 +177,49 @@ export default function BuyerGigExpandedPage() {
     return `${avg.toFixed(1)} (${count})`;
   }, [gig]);
 
-  if (isLoading) {
+  const questions = useMemo(() => {
+    const raw = (gig as any)?.questions;
+    if (!Array.isArray(raw)) return [];
+    return raw.map((q) => String(q).trim()).filter(Boolean);
+  }, [gig]);
+
+  const hasGigQuestions = questions.length > 0;
+
+  useEffect(() => {
+    setFaqAnswers(Array.from({ length: questions.length }, () => ""));
+    setShowFaqForm(false);
+    setCustomSpecifications("");
+  }, [gig?._id, questions.length]);
+
+  const onFaqAnswerChange = (index: number, value: string) => {
+    setFaqAnswers((prev) => prev.map((a, i) => (i === index ? value : a)));
+  };
+
+  const onOrderClick = async () => {
+    // Always open the pre-order form first (FAQ + Custom Specifications)
+    setShowFaqForm(true);
+  };
+
+  const onOrderNowClick = () => {
+    if (hasGigQuestions) {
+      const hasEmpty = faqAnswers.some((a) => !a.trim());
+      if (hasEmpty) {
+        setError("Please answer all FAQ questions before ordering.");
+        return;
+      }
+    }
+
+    setShowOrderConfirm(true);
+  };
+
+  const onConfirmOrder = async () => {
+    setShowOrderConfirm(false);
+    await onOrder();
+  };
+
+  const isLoadingGig = isLoading;
+
+  if (isLoadingGig) {
     return <div className="grid min-h-[220px] place-items-center text-gray-400">Loading gig...</div>;
   }
 
@@ -232,19 +324,11 @@ export default function BuyerGigExpandedPage() {
       <div className="flex flex-wrap justify-end gap-3 border-t border-white/10 pt-6">
         <button
           type="button"
-          onClick={onStartChat}
-          disabled={isStartingChat}
-          className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20 disabled:opacity-60"
-        >
-          {isStartingChat ? "Starting chat..." : "Message Seller"}
-        </button>
-        <button
-          type="button"
-          onClick={onOrder}
+          onClick={onOrderClick}
           disabled={isOrdering}
           className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
         >
-          {isOrdering ? "Ordering..." : "Order Now"}
+          Add Specification to Order
         </button>
         <button
           type="button"
@@ -278,6 +362,85 @@ export default function BuyerGigExpandedPage() {
             </div>
           </div>
         </section>
+      )}
+
+      {/*hasGigQuestions &&*/ showFaqForm && (
+        <section className="mt-6 border-t border-white/10 pt-6">
+          <h2 className="text-lg font-semibold text-white">
+            {hasGigQuestions ? "Answer FAQ before ordering" : "Add Custom Specifications"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-400">
+            {hasGigQuestions
+              ? "Please answer the seller’s questions."
+              : "Add your custom requirements before placing the order."}
+          </p>
+
+          <div className="mt-5 space-y-5">
+            {hasGigQuestions &&
+              questions.map((q, i) => (
+                <div key={`${q}-${i}`}>
+                  <p className="text-sm text-white">{i + 1}. {q}</p>
+                  <textarea
+                    rows={3}
+                    value={faqAnswers[i] ?? ""}
+                    onChange={(e) => onFaqAnswerChange(i, e.target.value)}
+                    placeholder="Write your answer..."
+                    className="mt-2 w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+                  />
+                </div>
+              ))}
+
+            <div>
+              <p className="text-sm text-white">Custom Specifications</p>
+              <textarea
+                rows={4}
+                value={customSpecifications}
+                onChange={(e) => setCustomSpecifications(e.target.value)}
+                placeholder="Add any extra requirements, notes, files info, or preferences..."
+                className="mt-2 w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={onOrderNowClick}
+              disabled={isOrdering}
+              className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
+            >
+              {isOrdering ? "Ordering..." : "Order Now"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {showOrderConfirm && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b1220] p-5">
+            <p className="text-sm text-gray-200">
+              This action will immediately launch an order to the seller, be sure that you want to make this order
+            </p>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowOrderConfirm(false)}
+                className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmOrder}
+                disabled={isOrdering}
+                className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
+              >
+                {isOrdering ? "Ordering..." : "Confirm Order"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}

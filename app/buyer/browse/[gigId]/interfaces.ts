@@ -52,3 +52,44 @@ export interface SendMessageResponse {
     read?: boolean;
   };
 }
+
+export interface SimpleOrderRequirement {
+  question: string;
+  answer: string;
+}
+
+export interface CreateSimpleOrderPayload {
+  gigId: string;
+  requirements: SimpleOrderRequirement[];
+
+  // richer request fields
+  price: number;
+  currency: string; // default "USD" for now
+  deliveryTime: number;
+  revisions?: number;
+  status: "pending";
+  payment: {
+    amount: number;
+    currency: string;
+    status: "pending";
+  };
+  timeline: {
+    started: string;
+  };
+}
+
+export interface CreateSimpleOrderResponse {
+  message: string;
+  order: {
+    _id: string;
+    status: string;
+    payment?: { amount: number; currency: string; status: string };
+    timeline?: {
+      started?: string;
+      delivered?: string;
+      completed?: string;
+      cancelled?: string;
+    };
+    [key: string]: unknown;
+  };
+}
