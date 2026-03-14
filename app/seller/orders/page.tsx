@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSellerOrders } from "./req-res";
 import type { SellerOrder, SellerOrderStatus } from "./interfaces";
+import Link from "next/link";
 
 const STATUS_OPTIONS: Array<{ label: string; value: "all" | SellerOrderStatus }> = [
   { label: "All", value: "all" },
@@ -142,10 +143,13 @@ export default function SellerOrdersPage() {
       ) : (
         <div className="mt-8 space-y-5">
           {orders.map((order) => (
-            <div
+            <Link
               key={order._id}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] p-5 shadow-sm"
+              href={`/seller/orders/${order._id}`}
+              className="block rounded-2xl border border-white/10 bg-[#0b1220] p-5 shadow-sm transition hover:border-indigo-400/40 hover:bg-[#111a2d]"
             >
+              <p className="mb-3 text-xs text-indigo-300">Open details →</p>
+
               <div className="flex flex-col gap-5 md:flex-row">
                 <div className="h-40 w-full overflow-hidden rounded-xl bg-white/5 md:w-64">
                   {order.gig.images?.[0] ? (
@@ -219,7 +223,7 @@ export default function SellerOrdersPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
