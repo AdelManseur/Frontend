@@ -58,5 +58,7 @@ export async function updateSellerOrderStatus(
     throw new Error("Updated order not found in response.");
   }
 
+  console.log("Order", data);
+
   return data;
 }

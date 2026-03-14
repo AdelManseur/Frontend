@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSellerOrderById } from "./req-res";
-import type { SellerExpandedOrder, SimpleOrderStatus } from "./interfaces";
+import { getBuyerOrderById, addBuyerOrderReview } from "./req-res";
+import type { BuyerExpandedOrder, SimpleOrderStatus } from "./interfaces";
 
 function formatDate(value?: string) {
   if (!value) return "—";
@@ -30,14 +30,20 @@ function statusClass(status: SimpleOrderStatus) {
   }
 }
 
-export default function SellerOrderExpandedPage() {
+export default function BuyerOrderExpandedPage() {
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
   const orderId = params?.orderId ?? "";
 
-  const [order, setOrder] = useState<SellerExpandedOrder | null>(null);
+  const [order, setOrder] = useState<BuyerExpandedOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -48,7 +54,7 @@ export default function SellerOrderExpandedPage() {
       setError("");
 
       try {
-        const data = await getSellerOrderById(orderId);
+        const data = await getBuyerOrderById(orderId);
         if (!mounted) return;
         setOrder(data);
       } catch (e) {
@@ -66,11 +72,33 @@ export default function SellerOrderExpandedPage() {
 
   const cover = useMemo(() => order?.gig?.images?.[0] ?? "", [order]);
 
+  const onSubmitReview = async () => {
+    if (!order?._id) return;
+
+    setReviewError("");
+    setReviewSuccess("");
+    setIsSubmittingReview(true);
+
+    try {
+      const data = await addBuyerOrderReview(order._id, {
+        rating,
+        comment: comment.trim(),
+      });
+
+      setOrder((prev) => (prev ? { ...prev, review: data.review } : prev));
+      setReviewSuccess(data.message || "Review added successfully");
+    } catch (e) {
+      setReviewError(e instanceof Error ? e.message : "Failed to add review.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <button
-          onClick={() => router.push("/seller/orders")}
+          onClick={() => router.push("/buyer/orders")}
           className="rounded-md bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20"
         >
           ← Back to Orders
@@ -200,8 +228,51 @@ export default function SellerOrderExpandedPage() {
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <h2 className="text-lg font-semibold text-white">Review</h2>
-            {!order.review ? (
-              <p className="mt-2 text-sm text-gray-400">No review yet.</p>
+
+            {!order?.review ? (
+              order?.status === "completed" ? (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="mb-1 block text-sm text-gray-300">Rating</label>
+                    <select
+                      value={rating}
+                      onChange={(e) => setRating(Number(e.target.value))}
+                      className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                    >
+                      <option value={5}>5 - Excellent</option>
+                      <option value={4}>4 - Very good</option>
+                      <option value={3}>3 - Good</option>
+                      <option value={2}>2 - Fair</option>
+                      <option value={1}>1 - Poor</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm text-gray-300">Comment</label>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      rows={4}
+                      className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                      placeholder="Excellent work! Very professional and delivered on time."
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onSubmitReview}
+                    disabled={isSubmittingReview}
+                    className="rounded-md bg-indigo-500 px-4 py-2 text-sm text-white hover:bg-indigo-400 disabled:opacity-60"
+                  >
+                    {isSubmittingReview ? "Submitting..." : "Submit Review"}
+                  </button>
+
+                  {reviewError && <p className="text-sm text-red-400">{reviewError}</p>}
+                  {reviewSuccess && <p className="text-sm text-emerald-400">{reviewSuccess}</p>}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-400">You can add a review after order completion.</p>
+              )
             ) : (
               <div className="mt-2">
                 <p className="text-white">Rating: {order.review.rating}/5</p>

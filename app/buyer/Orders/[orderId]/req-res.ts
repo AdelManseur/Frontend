@@ -1,9 +1,9 @@
-import type { GetSellerOrderByIdResponse, SellerExpandedOrder } from "./interfaces";
+import type { GetBuyerOrderByIdResponse, BuyerExpandedOrder, AddReviewPayload, AddReviewResponse } from "./interfaces";
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
-export async function getSellerOrderById(orderId: string): Promise<SellerExpandedOrder> {
+export async function getBuyerOrderById(orderId: string): Promise<BuyerExpandedOrder> {
   const url = `${API_BASE}/simpleorders/${encodeURIComponent(orderId)}`;
 
   const res = await fetch(url, {
@@ -11,7 +11,7 @@ export async function getSellerOrderById(orderId: string): Promise<SellerExpande
     credentials: "include",
   });
 
-  const data = (await res.json().catch(() => null)) as GetSellerOrderByIdResponse | null;
+  const data = (await res.json().catch(() => null)) as GetBuyerOrderByIdResponse | null;
 
   if (!res.ok) {
     throw new Error((data as any)?.message || (data as any)?.error || `Failed to fetch order (${res.status})`);
@@ -28,4 +28,30 @@ export async function getSellerOrderById(orderId: string): Promise<SellerExpande
   }
 
   return data.order;
+}
+
+export async function addBuyerOrderReview(
+  orderId: string,
+  payload: AddReviewPayload
+): Promise<AddReviewResponse> {
+  const url = `${API_BASE}/simpleorders/${encodeURIComponent(orderId)}/review`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => null)) as AddReviewResponse | null;
+
+  if (!res.ok) {
+    throw new Error((data as any)?.message || (data as any)?.error || `Failed to add review (${res.status})`);
+  }
+
+  if (!data?.review) {
+    throw new Error("Review missing in response.");
+  }
+
+  return data;
 }

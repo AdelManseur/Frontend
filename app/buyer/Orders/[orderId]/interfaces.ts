@@ -59,7 +59,17 @@ export interface OrderReview {
   reviewedAt?: string;
 }
 
-export interface SellerExpandedOrder {
+export interface AddReviewPayload {
+  rating: number;
+  comment?: string;
+}
+
+export interface AddReviewResponse {
+  message: string;
+  review: OrderReview;
+}
+
+export interface BuyerExpandedOrder {
   _id: string;
   gig: OrderGig;
   buyer: OrderUser;
@@ -80,6 +90,6 @@ export interface SellerExpandedOrder {
   accessLevel: string;
 }
 
-export interface GetSellerOrderByIdResponse {
-  order: SellerExpandedOrder;
+export interface GetBuyerOrderByIdResponse {
+  order: BuyerExpandedOrder;
 }
