@@ -93,3 +93,18 @@ export interface BuyerExpandedOrder {
 export interface GetBuyerOrderByIdResponse {
   order: BuyerExpandedOrder;
 }
+
+export interface RevisionRequest {
+  description: string;
+  requestedAt?: string;
+  status?: string;
+}
+
+export interface RequestRevisionPayload {
+  description: string;
+}
+
+export interface RequestRevisionResponse {
+  message: string;
+  revisionRequest: RevisionRequest;
+}

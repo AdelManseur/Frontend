@@ -1,4 +1,9 @@
-import type { GetBuyerOrderByIdResponse, BuyerExpandedOrder, AddReviewPayload, AddReviewResponse } from "./interfaces";
+import type {
+  AddReviewPayload,
+  AddReviewResponse,
+  RequestRevisionPayload,
+  RequestRevisionResponse,
+} from "./interfaces";
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
@@ -51,6 +56,34 @@ export async function addBuyerOrderReview(
 
   if (!data?.review) {
     throw new Error("Review missing in response.");
+  }
+
+  return data;
+}
+
+export async function requestBuyerRevision(
+  orderId: string,
+  payload: RequestRevisionPayload
+): Promise<RequestRevisionResponse> {
+  const url = `${API_BASE}/simpleorders/${encodeURIComponent(orderId)}/revisions`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => null)) as RequestRevisionResponse | null;
+
+  if (!res.ok) {
+    throw new Error(
+      (data as any)?.message || (data as any)?.error || `Failed to request revision (${res.status})`
+    );
+  }
+
+  if (!data?.revisionRequest) {
+    throw new Error("Revision request missing in response.");
   }
 
   return data;

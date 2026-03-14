@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getBuyerOrderById, addBuyerOrderReview } from "./req-res";
+import { getBuyerOrderById, addBuyerOrderReview, requestBuyerRevision } from "./req-res";
 import type { BuyerExpandedOrder, SimpleOrderStatus } from "./interfaces";
 
 function formatDate(value?: string) {
@@ -44,6 +44,12 @@ export default function BuyerOrderExpandedPage() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
+
+  // revision state
+  const [revisionDescription, setRevisionDescription] = useState("");
+  const [isRequestingRevision, setIsRequestingRevision] = useState(false);
+  const [revisionError, setRevisionError] = useState("");
+  const [revisionSuccess, setRevisionSuccess] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -91,6 +97,44 @@ export default function BuyerOrderExpandedPage() {
       setReviewError(e instanceof Error ? e.message : "Failed to add review.");
     } finally {
       setIsSubmittingReview(false);
+    }
+  };
+
+  const onRequestRevision = async () => {
+    if (!order?._id) return;
+    if (!revisionDescription.trim()) {
+      setRevisionError("Please describe what needs to be revised.");
+      return;
+    }
+
+    setIsRequestingRevision(true);
+    setRevisionError("");
+    setRevisionSuccess("");
+
+    try {
+      const data = await requestBuyerRevision(order._id, {
+        description: revisionDescription.trim(),
+      });
+
+      // append new revision request to order locally
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              revisionRequests: [
+                ...(prev.revisionRequests ?? []),
+                data.revisionRequest,
+              ],
+            }
+          : prev
+      );
+
+      setRevisionSuccess(data.message || "Revision requested successfully");
+      setRevisionDescription("");
+    } catch (e) {
+      setRevisionError(e instanceof Error ? e.message : "Failed to request revision.");
+    } finally {
+      setIsRequestingRevision(false);
     }
   };
 
@@ -281,6 +325,58 @@ export default function BuyerOrderExpandedPage() {
               </div>
             )}
           </div>
+
+          {/* Revision Request section — show only when delivered */}
+          {order?.status === "delivered" && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h2 className="text-lg font-semibold text-white">Request Revision</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Revisions allowed: {order.revisions}
+              </p>
+
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm text-gray-300">
+                    What needs to be changed?
+                  </label>
+                  <textarea
+                    value={revisionDescription}
+                    onChange={(e) => setRevisionDescription(e.target.value)}
+                    rows={4}
+                    className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none placeholder:text-gray-500"
+                    placeholder="Please change the color scheme to blue and add a contact form..."
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onRequestRevision}
+                  disabled={isRequestingRevision}
+                  className="rounded-md bg-orange-500 px-4 py-2 text-sm text-white hover:bg-orange-400 disabled:opacity-60"
+                >
+                  {isRequestingRevision ? "Submitting..." : "Request Revision"}
+                </button>
+
+                {revisionError && <p className="text-sm text-red-400">{revisionError}</p>}
+                {revisionSuccess && <p className="text-sm text-emerald-400">{revisionSuccess}</p>}
+              </div>
+
+              {/* existing revision requests list */}
+              {!!order.revisionRequests?.length && (
+                <div className="mt-5 space-y-2">
+                  <p className="text-sm font-medium text-gray-300">Previous Revision Requests</p>
+                  {order.revisionRequests.map((r, i) => (
+                    <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <p className="text-sm text-gray-200">{r.description || "No description"}</p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        {r.status || "pending"} • {formatDate(r.requestedAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
