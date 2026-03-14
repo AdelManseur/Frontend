@@ -11,7 +11,8 @@ export interface ChatMessage {
   to: string;
   content: string;
   createdAt: string;
-  read?: boolean;
+  read: boolean;
+  kind?: "simpleOrderMessage"; // add this
 }
 
 export interface ChatSlot {

@@ -13,6 +13,32 @@ type ChatSlot = {
   seenMessageId: string | null;
 };
 
+const parseSimpleOrderContent = (content: string) => {
+  const lines = content.split("\n").map((l) => l.trim()).filter(Boolean);
+  const faqs: { question: string; answer: string }[] = [];
+  let customSpec = "";
+  let inCustomSpec = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (/^Custom Specifications:?$/i.test(lines[i])) {
+      inCustomSpec = true;
+      continue;
+    }
+    if (inCustomSpec) {
+      customSpec += (customSpec ? "\n" : "") + lines[i];
+      continue;
+    }
+    const qMatch = lines[i].match(/^Q\d+:\s*(.+)$/i);
+    const aMatch = lines[i + 1]?.match(/^A\d+:\s*(.+)$/i);
+    if (qMatch) {
+      faqs.push({ question: qMatch[1], answer: aMatch?.[1] ?? "—" });
+      i++;
+    }
+  }
+
+  return { faqs, customSpec };
+};
+
 export default function SellerChatsPage() {
   const [myId, setMyId] = useState("");
   const [slots, setSlots] = useState<ChatSlot[]>([]);
@@ -62,11 +88,8 @@ export default function SellerChatsPage() {
               (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             );
 
-            // Check if FIRST message was sent TO the buyer (not BY the buyer)
             const firstMessage = conv[0];
             const firstMessageToBuyer = firstMessage.to === me.user._id;
-            
-            // Skip if seller initiated the chat
             if (firstMessageToBuyer) return null;
 
             const lastIncomingIndex = sorted.findLastIndex(
@@ -138,7 +161,6 @@ export default function SellerChatsPage() {
         );
         setMessages(sorted);
 
-        // last message sent TO seller (current user) by selected buyer
         const lastIncomingToSeller = [...sorted]
           .reverse()
           .find((m) => m.to === myId && m.from === selectedUserId && !m.read);
@@ -147,7 +169,6 @@ export default function SellerChatsPage() {
           try {
             await markMessageAsRead(lastIncomingToSeller._id);
             if (!mounted) return;
-
             setMessages((prev) =>
               prev.map((m) =>
                 m._id === lastIncomingToSeller._id ? { ...m, read: true } : m
@@ -186,7 +207,7 @@ export default function SellerChatsPage() {
 
       setSlots((prev) => {
         const idx = prev.findIndex((s) => s.user._id === otherId);
-        if (idx < 0) return prev; // appears when user exists in slots build
+        if (idx < 0) return prev;
         const copy = [...prev];
         copy[idx] = { ...copy[idx], lastMessage: msg };
         copy.sort(
@@ -229,7 +250,7 @@ export default function SellerChatsPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}><h1 className={styles.title}>Seller Chats</h1></div>
+      <div className={styles.header}><h1 className={styles.title}>Buyer Chats</h1></div>
       {error && <p className={styles.error}>{error}</p>}
 
       <div className={styles.layout}>
@@ -271,6 +292,37 @@ export default function SellerChatsPage() {
                       selected?.seenMessageId != null &&
                       m._id === selected.seenMessageId;
 
+                    // simple order message special UI
+                    if (m.kind === "simpleOrderMessage") {
+                      return (
+                        <div key={m._id}>
+                          <div className={`${styles.row} ${mine ? styles.rowMine : styles.rowOther}`}>
+                            <div
+                              className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleOther}`}
+                              style={{
+                                borderLeft: "3px solid #818cf8",
+                                background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
+                              }}
+                            >
+                              <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-300 mb-1">
+                                🗂 Simple Order Requirements
+                              </p>
+                              <p className={styles.bubbleText} style={{ whiteSpace: "pre-wrap" }}>
+                                {m.content}
+                              </p>
+                              <span className={styles.bubbleTime}>
+                                {new Date(m.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // normal message UI
                     return (
                       <div key={m._id}>
                         <div className={`${styles.row} ${mine ? styles.rowMine : styles.rowOther}`}>

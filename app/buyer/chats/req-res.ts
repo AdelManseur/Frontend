@@ -28,6 +28,7 @@ function normalizeMessage(m: any): ChatMessage {
     content: String(m?.content ?? ""),
     createdAt: String(m?.createdAt ?? new Date().toISOString()),
     read: Boolean(m?.read),
+    ...(m?.kind ? { kind: m.kind } : {}), // preserve kind if present
   };
 }
 
@@ -42,17 +43,43 @@ function normalizeUser(u: any): PublicUser {
 
 // CHAT DOCS endpoint
 export async function getMessagesBetween(userId1: string, userId2: string): Promise<ChatMessage[]> {
+  // normal messages
   const res = await fetch(
     `${API_BASE}/chat/messages?userId1=${encodeURIComponent(userId1)}&userId2=${encodeURIComponent(userId2)}`,
     { method: "GET", credentials: "include" }
   );
-
   const data = await parseJson<{ messages: ChatMessage[] }>(res);
   if (!res.ok) throw new Error(`Failed to fetch messages (${res.status})`);
 
-  return (data?.messages ?? [])
-    .map(normalizeMessage)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // simple order messages
+  const res2 = await fetch(
+    `${API_BASE}/simpleorders/messages?userId1=${encodeURIComponent(userId1)}&userId2=${encodeURIComponent(userId2)}`,
+    { method: "GET", credentials: "include" }
+  );
+  const data2 = await parseJson<{ messages: any[] }>(res2);
+
+  if (!res2.ok) {
+    console.warn(`Failed to fetch simple order messages (${res2.status})`);
+  }
+
+  const normal = (data?.messages ?? []).map(normalizeMessage);
+
+  const simple = (data2?.messages ?? []).map((m) =>
+    normalizeMessage({
+      _id: m?._id,
+      from: typeof m?.from === "object" ? m.from?._id : m?.from,
+      to: typeof m?.to === "object" ? m.to?._id : m?.to,
+      content: m?.message ?? "",          // simple order field -> chat field
+      createdAt: m?.timestamp ?? m?.createdAt,
+      read: m?.read ?? false,
+      // optional marker for UI:
+      kind: "simpleOrderMessage",
+    })
+  );
+
+  return [...normal, ...simple].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 }
 
 // CHAT DOCS endpoint

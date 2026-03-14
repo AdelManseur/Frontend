@@ -111,41 +111,86 @@ export async function createSimpleOrder(payload: CreateSimpleOrderPayload): Prom
   return data as CreateSimpleOrderResponse;
 }
 
-/*export async function createSimpleOrder(payload: any) {
-  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
-  const url = `${base}/simpleorders`;
+type CreateSimpleOrderMessagePayload = {
+  simpleOrderId: string;
+  from?: string;
+  to?: string;
+  message: string;
+  attachments?: string[];
+  timestamp?: string;
+  read?: boolean;
+};
 
-  console.log("[createSimpleOrder] URL:", url);
-  console.log("[createSimpleOrder] Payload:", payload);
+export async function createSimpleOrderMessage(payload: CreateSimpleOrderMessagePayload): Promise<void> {
+  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
+  const url = `${base}/simpleorders/${payload.simpleOrderId}/messages`;
+
+  const body = {
+    simpleOrderId: payload.simpleOrderId,
+    ...(payload.from ? { from: payload.from } : {}),
+    ...(payload.to ? { to: payload.to } : {}),
+    message: payload.message,
+    attachments: payload.attachments ?? [],
+    timestamp: payload.timestamp ?? new Date().toISOString(),
+    read: payload.read ?? false,
+  };
 
   const res = await fetch(url, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 
-  const raw = await res.text();
-  let data: any = null;
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || `Failed to add order message (${res.status})`);
+  }
+}
 
-  try {
-    data = raw ? JSON.parse(raw) : null;
-  } catch {
-    data = null;
+/*export async function createOrderMessage(
+  orderId: string,
+  requirements: { question: string; answer: string }[],
+  customSpecifications: string
+): Promise<void> {
+  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
+  const url = `${base}/orders/${orderId}/messages`;
+
+  const messageLines: string[] = [];
+
+  if (requirements.length > 0) {
+    messageLines.push("📋 Order Requirements & FAQ Answers");
+    messageLines.push("");
+    requirements.forEach((r, i) => {
+      messageLines.push(`Q${i + 1}: ${r.question}`);
+      messageLines.push(`A${i + 1}: ${r.answer || "—"}`);
+      messageLines.push("");
+    });
   }
 
-  console.log("[createSimpleOrder] Status:", res.status);
-  console.log("[createSimpleOrder] Raw response:", raw);
-  console.log("[createSimpleOrder] Parsed response:", data);
+  if (customSpecifications.trim()) {
+    messageLines.push("📝 Custom Specifications");
+    messageLines.push(customSpecifications.trim());
+  }
+
+  const message = messageLines.join("\n").trim();
+
+  if (!message) return;
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(
-      data?.message ||
-      data?.error ||
-      raw ||
-      `Failed to create simple order (${res.status})`
+    console.warn(
+      "[createOrderMessage] Failed to send order message:",
+      data?.message || res.status
     );
+    // non-blocking: don't throw, order was already created
   }
-
-  return data;
 }*/

@@ -221,6 +221,32 @@ export default function SellerChatsPage() {
     }
   };
 
+  const parseSimpleOrderContent = (content: string) => {
+    const lines = content.split("\n").map((l) => l.trim()).filter(Boolean);
+    const faqs: { question: string; answer: string }[] = [];
+    let customSpec = "";
+    let inCustomSpec = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (/^Custom Specifications:?$/i.test(lines[i])) {
+        inCustomSpec = true;
+        continue;
+      }
+      if (inCustomSpec) {
+        customSpec += (customSpec ? "\n" : "") + lines[i];
+        continue;
+      }
+      const qMatch = lines[i].match(/^Q\d+:\s*(.+)$/i);
+      const aMatch = lines[i + 1]?.match(/^A\d+:\s*(.+)$/i);
+      if (qMatch) {
+        faqs.push({ question: qMatch[1], answer: aMatch?.[1] ?? "—" });
+        i++; // skip answer line
+      }
+    }
+
+    return { faqs, customSpec };
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}><h1 className={styles.title}>Seller Chats</h1></div>
@@ -265,6 +291,31 @@ export default function SellerChatsPage() {
                       selected.seenMessageId != null &&
                       m._id === selected.seenMessageId;
 
+                    // simple order message special UI
+                    if (m.kind === "simpleOrderMessage") {
+                      return (
+                        <div key={m._id}>
+                          <div className={`${styles.row} ${styles.rowOther}`}>
+                            <div className={`${styles.bubble} ${styles.bubbleOther}`} style={{ borderLeft: "3px solid #818cf8", background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)" }}>
+                              <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-300 mb-1">
+                                🗂 Simple Order Requirements
+                              </p>
+                              <p className={styles.bubbleText} style={{ whiteSpace: "pre-wrap" }}>
+                                {m.content}
+                              </p>
+                              <span className={styles.bubbleTime}>
+                                {new Date(m.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // normal message UI — exactly as it was
                     return (
                       <div key={m._id}>
                         <div className={`${styles.row} ${mine ? styles.rowMine : styles.rowOther}`}>

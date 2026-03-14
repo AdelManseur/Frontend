@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { createSimpleOrder, getGigDetails, startChat } from "./req-res";
+import { createSimpleOrder, createSimpleOrderMessage, getGigDetails, startChat } from "./req-res";
 import type { BuyerGigDetails } from "./interfaces";
 import { getMe } from "@/app/req-res";
 import { sendMessageToSeller } from "./req-res";
@@ -57,13 +57,15 @@ export default function BuyerGigExpandedPage() {
     setIsOrdering(true);
 
     try {
+      const faqRequirements = questions.map((q, i) => ({
+        question: q,
+        answer: (faqAnswers[i] ?? "").trim(),
+      }));
+
       const requirements = [
-        ...questions.map((q, i) => ({
-          question: q,
-          answer: (faqAnswers[i] ?? "").trim(),
-        })),
+        ...faqRequirements,
         {
-          question: "Custom Specifications",
+          question: "Specific Confirmation",
           answer: customSpecifications.trim() || "No additional specifications",
         },
       ];
@@ -92,15 +94,44 @@ export default function BuyerGigExpandedPage() {
         },
       };
 
-      console.log("[BuyerGigExpandedPage] createSimpleOrder payload:", payload);
-
       const res = await createSimpleOrder(payload);
 
-      console.log("[BuyerGigExpandedPage] createSimpleOrder success:", res);
+      // Build full order message from FAQs + custom specs
+      const messageParts: string[] = [];
+      if (faqRequirements.length > 0) {
+        messageParts.push("FAQ Answers:");
+        faqRequirements.forEach((item, idx) => {
+          messageParts.push(`Q${idx + 1}: ${item.question}`);
+          messageParts.push(`A${idx + 1}: ${item.answer || "-"}`);
+        });
+      }
+      messageParts.push("Custom Specifications:");
+      messageParts.push(customSpecifications.trim() || "No additional specifications");
+      const composedMessage = messageParts.join("\n");
+
+      // REQUIRED: include from/to
+      if (res?.order?._id) {
+        const me = await getMe();
+        if (!me.logged) throw new Error("You must be logged in.");
+
+        const to = resolveSellerId(gig);
+        if (!to) throw new Error("Seller id not found for this gig.");
+
+        await createSimpleOrderMessage({
+          simpleOrderId: res.order._id,
+          from: me.user._id,
+          to,
+          message: composedMessage,
+          attachments: [],
+          read: false,
+        });
+      }
 
       setSuccess(res.message || "Order created successfully");
       setShowOrderConfirm(false);
       setShowFaqForm(false);
+      setFaqAnswers(Array.from({ length: questions.length }, () => ""));
+      setCustomSpecifications("");
     } catch (e) {
       console.error("[BuyerGigExpandedPage] createSimpleOrder error:", e);
       setError(e instanceof Error ? e.message : "Failed to create order.");
