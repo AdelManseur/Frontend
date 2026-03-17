@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { getMe, logoutUser } from "./req-res";
 import type { MeResponse } from "./interfaces";
 
-type UserMode = "buyer" | "seller";
 type NavItem = { label: string; href: string };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,7 +14,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const [session, setSession] = useState<MeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mode, setMode] = useState<UserMode>("buyer");
   const [openMenu, setOpenMenu] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -50,29 +48,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("jobme.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
 
-  const buyerItems = useMemo<NavItem[]>(
+  const userItems = useMemo<NavItem[]>(
     () => [
-      { label: "Profile", href: "/buyer/profile" },
-      { label: "Orders", href: "/buyer/orders" },
-      { label: "Browse", href: "/buyer/browse" },
+      { label: "Profile", href: "/profile" },
+      { label: "Browse", href: "/browse" },
+      { label: "Your Gigs", href: "/your-gigs" },
+      { label: "Chats", href: "/chats" },
+      { label: "Orders to Buy", href: "/orders-to-buy" },
+      { label: "Orders to Sell", href: "/orders-to-sell" },
       { label: "Saved", href: "/saved" },
-      { label: "Chats", href: "/buyer/chats" },
+      { label: "Spendings", href: "/spendings" },
+      { label: "Earnings", href: "/earnings" },
     ],
     []
   );
-
-  const sellerItems = useMemo<NavItem[]>(
-    () => [
-      { label: "Profile", href: "/seller/profile" },
-      { label: "Orders Confirmed", href: "/seller/orders" },
-      { label: "Chats", href: "/seller/chats" },
-      { label: "Your Gigs", href: "/seller/your-gigs" },
-      { label: "Earnings", href: "/seller/earnings" },
-    ],
-    []
-  );
-
-  const navItems = mode === "buyer" ? buyerItems : sellerItems;
 
   const onLogout = async () => {
     await logoutUser();
@@ -107,7 +96,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </h2>
 
             <nav className="mt-6 space-y-2">
-              {navItems.map((item) => {
+              {userItems.map((item) => {
                 const active = pathname === item.href;
                 return (
                   <Link
@@ -177,34 +166,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </button>
                   </div>
                 )}
-              </div>
-
-              <div className="border-t border-white/10 pt-4">
-                {!isSidebarCollapsed && (
-                  <p className="mb-2 text-xs uppercase tracking-wide text-gray-400">Mode</p>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMode("buyer")}
-                    className={`rounded-md px-3 py-2 text-sm font-medium ${
-                      mode === "buyer" ? "bg-indigo-500 text-white" : "bg-white/10 text-gray-300 hover:bg-white/20"
-                    }`}
-                    title="Buyer"
-                  >
-                    {isSidebarCollapsed ? "B" : "Buyer"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMode("seller")}
-                    className={`rounded-md px-3 py-2 text-sm font-medium ${
-                      mode === "seller" ? "bg-indigo-500 text-white" : "bg-white/10 text-gray-300 hover:bg-white/20"
-                    }`}
-                    title="Seller"
-                  >
-                    {isSidebarCollapsed ? "S" : "Seller"}
-                  </button>
-                </div>
               </div>
             </div>
           </div>
