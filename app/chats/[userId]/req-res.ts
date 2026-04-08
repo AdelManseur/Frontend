@@ -67,3 +67,62 @@ export async function getOrdersBetweenSellerBuyer(
 
   return Array.isArray(data?.orders) ? data!.orders : [];
 }
+
+type SendMessagePayload = {
+  from: string;
+  to: string;
+  content: string;
+};
+
+type SendMessageResponse = {
+  message: string;
+  data: {
+    _id: string;
+    from: string;
+    to: string;
+    content: string;
+    createdAt: string;
+    read: boolean;
+  };
+};
+
+export async function sendChatMessage(payload: SendMessagePayload) {
+  const url = `${API_BASE}/chat/message`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => null)) as SendMessageResponse | null;
+
+  if (!res.ok || !data?.data) {
+    throw new Error(data?.message || `Failed to send message (${res.status})`);
+  }
+
+  return data.data;
+}
+
+type MarkMessageReadResponse = {
+  messageId: string;
+  status: string;
+};
+
+export async function markMessageAsRead(messageId: string): Promise<MarkMessageReadResponse> {
+  const res = await fetch(`${API_BASE}/chat/messageread`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId }),
+  });
+
+  const data = (await res.json().catch(() => null)) as MarkMessageReadResponse | null;
+
+  if (!res.ok || !data?.messageId) {
+    throw new Error(`Failed to mark message as read (${res.status})`);
+  }
+
+  return data;
+}

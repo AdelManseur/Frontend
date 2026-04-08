@@ -14,18 +14,21 @@ export interface BuyerGig {
   title: string;
   description: string;
   category: string;
-  tags: string[];
   price: number;
   deliveryTime: number;
-  revisions: number;
-  features: string[];
-  images: string[];
-  seller: GigSeller;
-  rating: GigRating;
-  totalOrders: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  images?: string[];
+  tags?: string[];
+  rating?: {
+    average: number;
+    count: number;
+  };
+  seller?: {
+    _id: string;
+    name: string;
+    email: string;
+    pfp?: string;
+  };
+  isActive?: boolean;
 }
 
 export interface GigsPagination {
@@ -38,9 +41,43 @@ export interface GigsPagination {
 
 export interface GetSimpleGigsResponse {
   gigs: BuyerGig[];
-  pagination?: GigsPagination;
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface GetCategoriesResponse {
   categories: string[];
+}
+
+export interface AIMessage {
+  _id: string;
+  from: string;
+  to: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface SendAIMessageResponse {
+  message: string;
+  data: {
+    _id: string;
+    from: string;
+    to: string;
+    content: string;
+    aireply: string;
+    createdAt: string;
+  };
+}
+
+export interface GetAIChatHistoryResponse {
+  messages: Array<{
+    _id: string;
+    from: string;
+    to: string;
+    content: string;
+    aireply?: string;
+    createdAt: string;
+  }>;
 }

@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { getGigCategories, getSimpleGigs } from "./req-res";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { getGigCategories, getSimpleGigs, sendAIMessage, getAIChatHistory } from "./req-res";
 import { getMe } from "../req-res";
 import Link from "next/link";
-import type { BuyerGig } from "./interfaces";
+import type { BuyerGig, AIMessage } from "./interfaces";
+import styles from "./styles.module.css";
+
+// Helper to format AI response with bold text
+const formatAIText = (text: string) => {
+  return text.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
+};
 
 export default function BrowsePage() {
   const [gigs, setGigs] = useState<BuyerGig[]>([]);
@@ -16,6 +22,15 @@ export default function BrowsePage() {
   const [error, setError] = useState("");
 
   const [myUserId, setMyUserId] = useState<string>("");
+  const [aiPartner, setAiPartner] = useState<string>("");
+
+  // AI Chat state
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>([]);
+  const [aiDraft, setAiDraft] = useState("");
+  const [aiSending, setAiSending] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const aiMessagesRef = useRef<HTMLDivElement | null>(null);
 
   const loadGigs = async () => {
     setIsLoading(true);
@@ -33,6 +48,7 @@ export default function BrowsePage() {
 
       const currentUserId = me?.logged ? me.user?._id : "";
       setMyUserId(currentUserId || "");
+      setAiPartner("ai-bot");
 
       // hide my own gigs + only active gigs
       const visible = (result.gigs ?? []).filter((g: any) => {
@@ -69,6 +85,27 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, selectedCategory]);
 
+  // Load AI chat history when opening chat
+  useEffect(() => {
+    if (!isAIChatOpen || !myUserId || !aiPartner) return;
+
+    (async () => {
+      try {
+        const history = await getAIChatHistory(myUserId, aiPartner);
+        setAiMessages(history);
+        setAiError("");
+      } catch (err) {
+        setAiError(err instanceof Error ? err.message : "Failed to load chat history");
+      }
+    })();
+  }, [isAIChatOpen, myUserId, aiPartner]);
+
+  // Auto-scroll AI messages
+  useEffect(() => {
+    if (!aiMessagesRef.current) return;
+    aiMessagesRef.current.scrollTop = aiMessagesRef.current.scrollHeight;
+  }, [aiMessages]);
+
   const allTags = useMemo(() => {
     const set = new Set<string>();
     gigs.forEach((g) => (g.tags || []).forEach((tag) => set.add(tag)));
@@ -84,6 +121,32 @@ export default function BrowsePage() {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  const onSendAIMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const content = aiDraft.trim();
+    if (!content || aiSending || !myUserId || !aiPartner) return;
+
+    try {
+      setAiSending(true);
+      setAiError("");
+
+      // Send to backend
+      const responses = await sendAIMessage({
+        from: myUserId,
+        to: aiPartner,
+        content,
+      });
+
+      // Add both user message and AI response
+      setAiMessages((prev) => [...prev, ...responses]);
+      setAiDraft("");
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to send message.");
+    } finally {
+      setAiSending(false);
+    }
   };
 
   return (
@@ -216,6 +279,77 @@ export default function BrowsePage() {
             );
           })}
       </div>
+
+      {/* AI Chat FAB */}
+      <button
+        type="button"
+        onClick={() => setIsAIChatOpen((v) => !v)}
+        className={styles.fab}
+        title={isAIChatOpen ? "Close AI chat" : "Open AI chat"}
+      >
+        {isAIChatOpen ? "✕" : "💬"}
+      </button>
+
+      {/* AI Chat Panel */}
+      {isAIChatOpen && (
+        <div className={styles.panel}>
+          <div className={styles.header}>
+            <h3 className={styles.title}>AI Assistant</h3>
+            <button
+              type="button"
+              onClick={() => setIsAIChatOpen(false)}
+              className={styles.closeBtn}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div ref={aiMessagesRef} className={styles.messages}>
+            {aiMessages.length === 0 ? (
+              <p className={styles.empty}>Start chatting with AI...</p>
+            ) : (
+              aiMessages.map((msg) => (
+                <div
+                  key={msg._id}
+                  className={`${styles.row} ${msg.role === "user" ? styles.rowUser : styles.rowAssistant}`}
+                >
+                  <div
+                    className={`${styles.bubble} ${
+                      msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                    }`}
+                  >
+                    <p
+                      dangerouslySetInnerHTML={{
+                        __html: formatAIText(msg.content),
+                      }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {aiError && <p className={styles.error}>{aiError}</p>}
+
+          <form onSubmit={onSendAIMessage} className={styles.composer}>
+            <input
+              value={aiDraft}
+              onChange={(e) => setAiDraft(e.target.value)}
+              placeholder="Ask me anything..."
+              className={styles.input}
+              disabled={aiSending}
+            />
+            <button
+              type="submit"
+              disabled={aiSending || !aiDraft.trim()}
+              className={styles.sendBtn}
+            >
+              {aiSending ? "..." : "Send"}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
