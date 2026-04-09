@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import { getSimpleOrderMessagesByUsers } from "./req-res";
 import type { SimpleOrderMessage } from "./interfaces";
 import styles from "./styles.module.css";

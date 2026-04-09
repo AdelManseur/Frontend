@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import { getOrdersBetweenSellerBuyer, getSimpleUserDetails } from "./req-res";
 import type { ProjectOrderSummary, SimpleUserDetails } from "./interfaces";
 import styles from "./layout.module.css";

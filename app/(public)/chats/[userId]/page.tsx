@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import { getMessagesBetween, markMessageAsRead, sendChatMessage } from "./req-res";
 import type { ChatMessage } from "./interfaces";
 import styles from "./styles.module.css";

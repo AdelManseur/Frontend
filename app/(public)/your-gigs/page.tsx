@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getMyGigs } from "./req-res";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import type { SellerGig } from "./interfaces";
 
 export default function YourGigsPage() {

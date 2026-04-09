@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import { getSellerConversations } from "./req-res";
 import type { SellerConversationListItem } from "./interfaces";
 import styles from "./layout.module.css";

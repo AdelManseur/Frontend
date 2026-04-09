@@ -52,6 +52,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     () => [
       { label: "Add Admin", href: "/add-admins" },
       { label: "Control Admins", href: "/control-admins" },
+      { label: "Control Users", href: "/control-users" },
+      { label: "Control Orders", href: "/control-orders" },
     ],
     []
   );
