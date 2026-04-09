@@ -1,0 +1,125 @@
+/* filepath: c:\Users\Lenovo\Downloads\JobMe-main\Frontend\frontend\app\super-admin\styles.module.css */
+
+.page {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 2rem);
+  gap: 16px;
+}
+
+.sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 16px;
+  height: fit-content;
+  position: sticky;
+  top: 16px;
+}
+
+.brand {
+  margin: 0 0 14px;
+  font-size: 18px;
+  color: #fff;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.navItem {
+  display: block;
+  text-decoration: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.active {
+  color: #fff;
+  background: rgba(79, 70, 229, 0.22);
+  border-color: rgba(79, 70, 229, 0.5);
+}
+
+.content {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.title {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 22px;
+}
+
+.card {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.metric p {
+  margin: 0 0 6px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.metric strong {
+  color: #fff;
+  font-size: 22px;
+}
+
+.emptyState {
+  color: #94a3b8;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
