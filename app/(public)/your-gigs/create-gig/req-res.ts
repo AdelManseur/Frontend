@@ -4,7 +4,7 @@ import type {
   CreateGigSuccessResponse,
 } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 const CREATE_GIG_PATH = "/api/simple-gigs";
 
 export async function createGig(payload: CreateGigRequest): Promise<CreateGigSuccessResponse> {
