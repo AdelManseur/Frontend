@@ -48,15 +48,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("jobme.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
 
-  const userItems = useMemo<NavItem[]>(
-    () => [
-      { label: "Add Admin", href: "/add-admins" },
-      { label: "Control Admins", href: "/control-admins" },
+  const role = session?.logged ? session.user.role : null;
+  const userItems = useMemo<NavItem[]>(() => {
+    if (role === "super_admin") {
+      return [
+        { label: "Add Admin", href: "/add-admins" },
+        { label: "Control Admins", href: "/control-admins" },
+        { label: "Control Users", href: "/control-users" },
+        { label: "Control Orders", href: "/control-orders" },
+      ];
+    }
+
+    return [
       { label: "Control Users", href: "/control-users" },
       { label: "Control Orders", href: "/control-orders" },
-    ],
-    []
-  );
+    ];
+  }, [role]);
 
   const onLogout = async () => {
     await logoutUser();
@@ -65,7 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   if (isLoading) return <main className="min-h-screen grid place-items-center">Loading...</main>;
-  //if (!session?.logged) return <>{children}</>;
+  if (!session?.logged) return <>{children}</>;
 
   return (
     <main className="h-screen w-screen overflow-hidden bg-[#0b1220] text-white">

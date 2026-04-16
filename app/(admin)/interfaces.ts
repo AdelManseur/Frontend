@@ -13,6 +13,7 @@ export interface UserProfile {
   bday?: string;
   pfp?: string;
   address?: UserAddress;
+  role: "admin" | "super_admin";
   createdAt?: string;
   updatedAt?: string;
 }

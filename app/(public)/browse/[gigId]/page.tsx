@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createSimpleOrder, createSimpleOrderMessage, getGigDetails, startChat } from "./req-res";
 import { ensureConversationExists } from "./req-res";
 import type { BuyerGigDetails } from "./interfaces";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import { sendMessageToSeller } from "./req-res";
 
 export default function BuyerGigExpandedPage() {

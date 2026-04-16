@@ -12,6 +12,31 @@ const formatAIText = (text: string) => {
   return text.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
 };
 
+const parseTagsFromAIResponse = (text: string): string[] | null => {
+  try {
+    console.log("Parsing AI response for tags:", text);
+    const parsed = JSON.parse(text);
+    console.log("Parsed AI response:", parsed);
+
+    if (Array.isArray(parsed)) {
+      return parsed.map(String).filter(Boolean);
+    }
+
+    if (parsed && typeof parsed === "object") {
+      if (Array.isArray(parsed.tags)) {
+        return parsed.tags.map(String).filter(Boolean);
+      }
+
+      // fallback: treat object keys as tags
+      return Object.keys(parsed).filter(Boolean);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 export default function BrowsePage() {
   const [gigs, setGigs] = useState<BuyerGig[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -32,14 +57,16 @@ export default function BrowsePage() {
   const [aiError, setAiError] = useState("");
   const aiMessagesRef = useRef<HTMLDivElement | null>(null);
 
-  const loadGigs = async () => {
+  const loadGigs = async (overrideTags?: string[]) => {
     setIsLoading(true);
     setError("");
+
     try {
       const [result, me] = await Promise.all([
         getSimpleGigs({
           search,
           category: selectedCategory || undefined,
+          tags: overrideTags ?? selectedTags,
           page: 1,
           limit: 50,
         }),
@@ -83,7 +110,7 @@ export default function BrowsePage() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory]);
+  }, [search, selectedCategory, selectedTags]);
 
   // Load AI chat history when opening chat
   useEffect(() => {
@@ -132,22 +159,34 @@ export default function BrowsePage() {
       setAiSending(true);
       setAiError("");
 
-      // Send to backend
       const responses = await sendAIMessage({
         from: myUserId,
         to: aiPartner,
         content,
       });
 
-      // Add both user message and AI response
       setAiMessages((prev) => [...prev, ...responses]);
       setAiDraft("");
+
+      const assistantReply = responses.find((m) => m.role === "assistant")?.content;
+      const tags = assistantReply ? parseTagsFromAIResponse(assistantReply) : null;
+      console.log("Parsed tags from AI response:", tags);
+      if (tags?.length) {
+        setAiSuggestedTags(tags);
+        setSelectedTags(tags);
+        setSearch("");
+        setSelectedCategory("");
+
+        await loadGigs(tags);
+      }
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "Failed to send message.");
     } finally {
       setAiSending(false);
     }
   };
+
+  const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -309,24 +348,31 @@ export default function BrowsePage() {
             {aiMessages.length === 0 ? (
               <p className={styles.empty}>Start chatting with AI...</p>
             ) : (
-              aiMessages.map((msg) => (
-                <div
-                  key={msg._id}
-                  className={`${styles.row} ${msg.role === "user" ? styles.rowUser : styles.rowAssistant}`}
-                >
+              aiMessages.map((msg) => {
+                const isUser = msg.role === "user";
+                const isAssistant = msg.role === "assistant";
+
+                return (
                   <div
-                    className={`${styles.bubble} ${
-                      msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                    key={msg._id}
+                    className={`${styles.row} ${
+                      isUser ? styles.rowUser : isAssistant ? styles.rowAssistant : styles.rowAssistant
                     }`}
                   >
-                    <p
-                      dangerouslySetInnerHTML={{
-                        __html: formatAIText(msg.content),
-                      }}
-                    />
+                    <div
+                      className={`${styles.bubble} ${
+                        isUser ? styles.bubbleUser : styles.bubbleAssistant
+                      }`}
+                    >
+                      <p
+                        dangerouslySetInnerHTML={{
+                          __html: formatAIText(msg.content),
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

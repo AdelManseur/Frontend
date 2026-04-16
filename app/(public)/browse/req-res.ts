@@ -11,6 +11,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/a
 type GetSimpleGigsParams = {
   search?: string;
   category?: string;
+  tags?: string[];
   page?: number;
   limit?: number;
 };
@@ -20,6 +21,7 @@ export async function sendAIMessage(payload: {
   to: string;
   content: string;
 }): Promise<AIMessage[]> {
+
   const response = await fetch(`${API_BASE_URL}/api/chatbot/message`, {
     method: "POST",
     credentials: "include",
@@ -85,26 +87,27 @@ export async function getAIChatHistory(userId1: string, userId2: string): Promis
 
   messages.forEach((msg) => {
     // User message
+    const role = msg.to === 'ai-bot' ? 'assistant' : 'user';
     flattened.push({
       _id: msg._id,
       from: msg.from,
       to: msg.to,
-      role: "user",
+      role: role,
       content: msg.content,
       createdAt: msg.createdAt,
     });
 
     // AI reply (if exists)
-    if (msg.aireply) {
+    /*if (msg.to == 'ai-bot') {
       flattened.push({
         _id: `${msg._id}-reply`,
         from: msg.to,
         to: msg.from,
         role: "assistant",
-        content: msg.aireply,
+        content: msg.content,
         createdAt: msg.createdAt,
       });
-    }
+    }*/
   });
 
   return flattened.sort(
@@ -117,6 +120,8 @@ export async function getSimpleGigs(params: GetSimpleGigsParams = {}): Promise<G
 
   if (params.search?.trim()) query.set("search", params.search.trim());
   if (params.category?.trim()) query.set("category", params.category.trim());
+  if (params.tags?.length) query.set("tags", params.tags.join(","));
+  console.log(query.toString());
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 50));
 

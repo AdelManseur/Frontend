@@ -102,14 +102,15 @@
 
 .row {
   display: flex;
+  width: 100%;
 }
 
 .rowUser {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .rowAssistant {
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .bubble {

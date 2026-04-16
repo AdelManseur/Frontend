@@ -34,7 +34,7 @@ export default function SuperAdminHomePage() {
     );
   }
 
-  //if (session?.logged) {
+  if (session?.logged) {
     return (
       <main className="min-h-screen bg-[#0f172a] text-white p-8">
         <section className="mx-auto max-w-4xl rounded-2xl border border-white/10 bg-white/5 p-8">
@@ -43,4 +43,17 @@ export default function SuperAdminHomePage() {
         </section>
       </main>
     );
+  }
+
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#0f172a] text-white">
+      <p className="text-sm text-gray-300">You are not logged in.</p>
+      <Link
+        href="/super-admin/login"
+        className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400"
+      >
+        Go to Login
+      </Link>
+    </main>
+  );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getMyGigs } from "../req-res";
-import { getMe } from "@/app/req-res";
+import { getMe } from "@/app/(public)/req-res";
 import type { SellerGig } from "../interfaces";
 
 export default function YourGigExpandedPage() {
