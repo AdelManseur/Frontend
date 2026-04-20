@@ -9,20 +9,8 @@ import type {
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
-function buildApiUrl(path: string): string {
-  const base = RAW_BASE.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-
-  // avoid /api/api duplication
-  if (base.endsWith("/api") && p.startsWith("/api/")) {
-    return `${base}${p.slice(4)}`;
-  }
-
-  return `${base}${p}`;
-}
-
 export async function getUsersList(token: string, query: UsersQuery = {}): Promise<UsersListPayload> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
 
   const params = new URLSearchParams();
   if (query.search?.trim()) params.set("search", query.search.trim());
@@ -57,7 +45,7 @@ export async function updateUserStatus(
   userId: string,
   payload: UpdateUserStatusPayload
 ): Promise<UpdateUserStatusResponse> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
   if (!userId) throw new Error("Missing user ID.");
 
   const res = await fetch(RAW_BASE + `/api/admin/data/users/${userId}/status`, {
@@ -79,7 +67,7 @@ export async function updateUserStatus(
 }
 
 export async function getUserDetails(token: string, userId: string): Promise<UserDetailsResponse> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
   if (!userId) throw new Error("Missing user ID.");
 
   const res = await fetch(RAW_BASE + `/api/admin/data/users/${userId}`, {

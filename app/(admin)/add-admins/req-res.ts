@@ -2,17 +2,6 @@ import type { CreateAdminPayload, CreateAdminResponse } from "./interfaces";
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
-function buildApiUrl(path: string): string {
-  const base = RAW_BASE.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-
-  // avoid /api/api duplication
-  if (base.endsWith("/api") && p.startsWith("/api/")) {
-    return `${base}${p.slice(4)}`;
-  }
-  return `${base}${p}`;
-}
-
 export async function createAdmin(
   payload: CreateAdminPayload,
   token: string

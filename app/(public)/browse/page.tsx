@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { getGigCategories, getSimpleGigs, sendAIMessage, getAIChatHistory } from "./req-res";
 import { getMe } from "../req-res";
 import Link from "next/link";
@@ -148,7 +148,7 @@ export default function BrowsePage() {
     );
   };
 
-  const onSendAIMessage = async (e: React.FormEvent) => {
+  const onSendAIMessage = async (e: FormEvent) => {
     e.preventDefault();
     const content = aiDraft.trim();
     if (!content || aiSending || !myUserId || !aiPartner) return;
