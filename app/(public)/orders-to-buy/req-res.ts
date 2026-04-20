@@ -1,6 +1,6 @@
 import type { BuyerOrderStatus, BuyerOrdersResponse } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
 type GetBuyerOrdersParams = {

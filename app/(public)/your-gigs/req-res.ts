@@ -1,6 +1,6 @@
 import type { GigsApiResponse, SellerGig } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 function normalizeGigs(payload: any): SellerGig[] {
   if (Array.isArray(payload)) return payload as SellerGig[];

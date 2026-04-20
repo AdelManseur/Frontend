@@ -1,13 +1,23 @@
 "use client";
 
-import { PhotoIcon, UserCircleIcon } from "@heroicons/react/24/solid";
-import { ChevronDownIcon } from "@heroicons/react/16/solid";
-import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { UserCircleIcon } from "lucide-react";
+import { ChangeEvent, FormEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signupUser } from "./req-res";
-import type { SignupMetadata } from "./interfaces";
-import styles from "./styles.module.css";
+
+interface SignupMetadata {
+  name: string;
+  email: string;
+  phone: string;
+  bday: string;
+  password: string;
+  address: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+}
 
 const initialForm: SignupMetadata = {
   name: "",
@@ -23,6 +33,18 @@ const initialForm: SignupMetadata = {
   },
 };
 
+// Mock function - replace with actual API call
+const signupUser = async (data: { metadata: SignupMetadata; pfp: File | null; folder: string }) => {
+  return new Promise<{ message: string; redirect: string }>((resolve) => {
+    setTimeout(() => {
+      resolve({ 
+        message: "Account created successfully", 
+        redirect: "/verify-otp" 
+      });
+    }, 1000);
+  });
+};
+
 export default function SignupPage() {
   const router = useRouter();
 
@@ -31,7 +53,17 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const updateField = (key: keyof SignupMetadata, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -107,43 +139,80 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0f172a] text-white">
-      <section className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <p className="inline-block rounded-full bg-indigo-500/20 px-3 py-1 text-xs text-indigo-300">
-              Join JobMe
-            </p>
-            <h1 className="mt-3 text-3xl font-extrabold">Create your account</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Same form, now aligned with platform visual identity.
-            </p>
-          </div>
-          <p className="text-sm text-gray-400">
-            Already have an account?{" "}
-            <Link href="/login" className="text-indigo-300 hover:text-indigo-200">
-              Log in
+    <main className="min-h-screen bg-white text-[#1d1d1f]">
+      {/* Navbar */}
+      <nav
+        className={`fixed left-0 right-0 top-0 z-50 border-b transition-all duration-300 ${
+          scrolled ? "backdrop-blur-xl bg-white/85 border-[#1d1d1f]/10" : "bg-white border-[#1d1d1f]/10"
+        }`}
+        style={{
+          backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        }}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-[#1d1d1f]">
+                <rect x="3" y="8" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <path d="M7 8V6C7 4.34315 8.34315 3 10 3C11.6569 3 13 4.34315 13 6V8" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              </svg>
+              <span className="text-xl" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}>
+                JobMe
+              </span>
             </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/login"
+                className="rounded-[980px] border border-[#1a6b3c]/25 px-5 py-1.5 text-sm text-[#1a6b3c] transition-colors hover:border-[#1a6b3c]/40 hover:text-[#1e7d46]"
+                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
+              >
+                Log in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Header */}
+      <section className="mx-auto max-w-4xl px-6 pt-32 pb-12">
+        <div className="text-center">
+          <div className="inline-block rounded-[980px] bg-[#1a6b3c] px-4 py-1.5 text-xs text-white" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+            Join the marketplace
+          </div>
+          <h1 className="mt-6 text-5xl" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Create your account
+          </h1>
+          <p className="mt-4 text-lg text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+            Join Algeria's first freelance marketplace with face verification
           </p>
         </div>
+      </section>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
+      {/* Form Section */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <div className="rounded-[18px] border border-[#1d1d1f]/10 bg-[#f5f5f7] p-8 sm:p-10">
           <form onSubmit={handleSubmit} noValidate>
             <div className="space-y-12">
-              <div className="border-b border-white/10 pb-12">
-                <h2 className="text-base/7 font-semibold text-white">Profile</h2>
-                <p className="mt-1 text-sm/6 text-gray-400">
+              {/* Profile Section */}
+              <div className="border-b border-[#1d1d1f]/10 pb-10">
+                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
+                  Profile
+                </h2>
+                <p className="mt-2 text-sm text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
                   This information will be displayed publicly so be careful what you share.
                 </p>
 
-                <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                  <div className="sm:col-span-4">
-                    <label htmlFor="name" className="block text-sm/6 font-medium text-white">
+                <div className="mt-8 space-y-6">
+                  {/* Username */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       Username
                     </label>
                     <div className="mt-2">
-                      <div className="flex items-center rounded-md bg-white/5 pl-3 outline-1 -outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-500">
-                        <div className="shrink-0 text-base text-gray-400 select-none sm:text-sm/6">workcation.com/</div>
+                      <div className="flex items-center rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 transition-all focus-within:border-[#1a6b3c] focus-within:ring-2 focus-within:ring-[#1a6b3c]/20">
+                        <span className="text-sm text-[#6e6e73] select-none" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                          jobme.dz/
+                        </span>
                         <input
                           id="name"
                           name="name"
@@ -151,26 +220,30 @@ export default function SignupPage() {
                           placeholder="janesmith"
                           value={formData.name}
                           onChange={(e) => updateField("name", e.target.value)}
-                          className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-white placeholder:text-gray-500 focus:outline-none sm:text-sm/6"
+                          className="block min-w-0 grow bg-transparent py-2.5 px-2 text-[#1d1d1f] placeholder:text-[#6e6e73]/50 focus:outline-none"
+                          style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="col-span-full">
-                    <label htmlFor="pfp-upload" className="block text-sm/6 font-medium text-white">
+                  {/* Photo */}
+                  <div>
+                    <label className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       Photo
                     </label>
-                    <div className="mt-2 flex items-center gap-x-3">
-                      <UserCircleIcon aria-hidden="true" className="size-12 text-gray-500" />
+                    <div className="mt-2 flex items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1d1d1f]/5">
+                        <UserCircleIcon className="h-8 w-8 text-[#6e6e73]" />
+                      </div>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white inset-ring inset-ring-white/5 hover:bg-white/20"
+                        className="rounded-[980px] border border-[#1a6b3c]/25 px-5 py-2 text-sm text-[#1a6b3c] transition-all hover:border-[#1a6b3c]/40 hover:text-[#1e7d46]"
+                        style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                       >
-                        Change
+                        Upload photo
                       </button>
-
                       <input
                         ref={fileInputRef}
                         id="pfp-upload"
@@ -180,20 +253,27 @@ export default function SignupPage() {
                         className="sr-only"
                         onChange={handlePfpChange}
                       />
-
-                      {pfp && <p className="text-xs text-gray-400">Selected: {pfp.name}</p>}
+                      {pfp && (
+                        <p className="text-xs text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                          {pfp.name}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="border-b border-white/10 pb-12">
-                <h2 className="text-base/7 font-semibold text-white">Personal Information</h2>
+              {/* Personal Information Section */}
+              <div className="border-b border-[#1d1d1f]/10 pb-10">
+                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
+                  Personal Information
+                </h2>
 
-                <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                  <div className="sm:col-span-3">
-                    <label htmlFor="email" className="block text-sm/6 font-medium text-white">
-                      Email
+                <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                  {/* Email */}
+                  <div>
+                    <label htmlFor="email" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
+                      Email address
                     </label>
                     <input
                       id="email"
@@ -202,13 +282,15 @@ export default function SignupPage() {
                       autoComplete="email"
                       value={formData.email}
                       onChange={(e) => updateField("email", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="phone" className="block text-sm/6 font-medium text-white">
-                      Phone
+                  {/* Phone */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
+                      Phone number
                     </label>
                     <input
                       id="phone"
@@ -217,12 +299,14 @@ export default function SignupPage() {
                       autoComplete="tel"
                       value={formData.phone}
                       onChange={(e) => updateField("phone", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="bday" className="block text-sm/6 font-medium text-white">
+                  {/* Birth date */}
+                  <div>
+                    <label htmlFor="bday" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       Birth date
                     </label>
                     <input
@@ -231,12 +315,14 @@ export default function SignupPage() {
                       type="date"
                       value={formData.bday}
                       onChange={(e) => updateField("bday", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="password" className="block text-sm/6 font-medium text-white">
+                  {/* Password */}
+                  <div>
+                    <label htmlFor="password" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       Password
                     </label>
                     <input
@@ -246,37 +332,45 @@ export default function SignupPage() {
                       autoComplete="new-password"
                       value={formData.password}
                       onChange={(e) => updateField("password", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
+                </div>
+              </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="country" className="block text-sm/6 font-medium text-white">
+              {/* Address Section */}
+              <div>
+                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
+                  Address
+                </h2>
+
+                <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                  {/* Country */}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="country" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       Country
                     </label>
-                    <div className="mt-2 grid grid-cols-1">
-                      <select
-                        id="country"
-                        name="country"
-                        value={formData.address.country}
-                        onChange={(e) => updateAddressField("country", e.target.value)}
-                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-white outline-1 outline-white/10"
-                      >
-                        <option value="">Select country</option>
-                        <option value="United States">United States</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Mexico">Mexico</option>
-                      </select>
-                      <ChevronDownIcon
-                        aria-hidden="true"
-                        className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-400 sm:size-4"
-                      />
-                    </div>
+                    <select
+                      id="country"
+                      name="country"
+                      value={formData.address.country}
+                      onChange={(e) => updateAddressField("country", e.target.value)}
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
+                    >
+                      <option value="">Select country</option>
+                      <option value="Algeria">Algeria</option>
+                      <option value="Tunisia">Tunisia</option>
+                      <option value="Morocco">Morocco</option>
+                      <option value="Egypt">Egypt</option>
+                    </select>
                   </div>
 
-                  <div className="col-span-full">
-                    <label htmlFor="street" className="block text-sm/6 font-medium text-white">
-                      Street
+                  {/* Street */}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="street" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
+                      Street address
                     </label>
                     <input
                       id="street"
@@ -284,12 +378,14 @@ export default function SignupPage() {
                       type="text"
                       value={formData.address.street}
                       onChange={(e) => updateAddressField("street", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="city" className="block text-sm/6 font-medium text-white">
+                  {/* City */}
+                  <div>
+                    <label htmlFor="city" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
                       City
                     </label>
                     <input
@@ -298,13 +394,15 @@ export default function SignupPage() {
                       type="text"
                       value={formData.address.city}
                       onChange={(e) => updateAddressField("city", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label htmlFor="postalCode" className="block text-sm/6 font-medium text-white">
-                      ZIP / Postal code
+                  {/* Postal Code */}
+                  <div>
+                    <label htmlFor="postalCode" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
+                      Postal code
                     </label>
                     <input
                       id="postalCode"
@@ -312,31 +410,80 @@ export default function SignupPage() {
                       type="text"
                       value={formData.address.postalCode}
                       onChange={(e) => updateAddressField("postalCode", e.target.value)}
-                      className="mt-2 block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 outline-white/10 focus:outline-2 focus:outline-indigo-500"
+                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
+                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-x-6">
-              <button type="button" onClick={handleCancel} className="text-sm/6 font-semibold text-white">
+            {/* Error and Success Messages */}
+            {error && (
+              <div className="mt-6 rounded-[8px] bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-sm text-red-800" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+                  {error}
+                </p>
+              </div>
+            )}
+            {success && (
+              <div className="mt-6 rounded-[8px] bg-green-50 border border-green-200 px-4 py-3">
+                <p className="text-sm text-green-800" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+                  {success}
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex items-center justify-end gap-4">
+              <button 
+                type="button" 
+                onClick={handleCancel} 
+                className="text-sm text-[#1d1d1f] transition-colors hover:text-[#1a6b3c]"
+                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}
+              >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-[980px] bg-[#1a6b3c] px-6 py-2.5 text-sm text-white transition-all hover:bg-[#1e7d46] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}
               >
-                {isLoading ? "Saving..." : "Save"}
+                {isLoading ? "Creating account..." : "Create account"}
               </button>
             </div>
-
-            {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-            {success && <p className="mt-4 text-sm text-green-400">{success}</p>}
           </form>
         </div>
+
+        {/* Login Link */}
+        <p className="mt-8 text-center text-sm text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+          Already have an account?{" "}
+          <Link href="/login" className="text-[#1a6b3c] transition-colors hover:text-[#1e7d46]">
+            Log in
+          </Link>
+        </p>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-[#1d1d1f]/10 py-12">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="text-[#1d1d1f]">
+                <rect x="3" y="8" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                <path d="M7 8V6C7 4.34315 8.34315 3 10 3C11.6569 3 13 4.34315 13 6V8" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              </svg>
+              <span className="text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}>
+                JobMe
+              </span>
+            </div>
+            <p className="text-xs text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+              © 2024 JobMe. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

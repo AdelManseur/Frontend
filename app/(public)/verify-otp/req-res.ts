@@ -4,7 +4,7 @@ import type {
   VerifyOtpSuccessResponse,
 } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 export async function verifyOtp(payload: VerifyOtpRequest): Promise<VerifyOtpSuccessResponse> {
   const response = await fetch(`${API_BASE_URL}/api/users/verify-otp`, {
