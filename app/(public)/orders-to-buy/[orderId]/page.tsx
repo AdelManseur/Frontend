@@ -2,8 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getBuyerOrderById, addBuyerOrderReview, requestBuyerRevision } from "./req-res";
-import type { BuyerExpandedOrder, SimpleOrderStatus } from "./interfaces";
+import {
+  getBuyerOrderById,
+  addBuyerOrderReview,
+  requestBuyerRevision,
+  submitBuyerOrderReport,
+} from "./req-res";
+import type {
+  BuyerExpandedOrder,
+  ReportCategory,
+  ReportSeverity,
+  SimpleOrderStatus,
+  SubmittedOrderReport,
+} from "./interfaces";
 
 function formatDate(value?: string) {
   if (!value) return "—";
@@ -30,6 +41,31 @@ function statusClass(status: SimpleOrderStatus) {
   }
 }
 
+const REPORT_CATEGORIES: Array<{ value: ReportCategory; label: string }> = [
+  { value: "non_delivery", label: "Non-delivery" },
+  { value: "fake_service", label: "Fake service" },
+  { value: "poor_quality", label: "Poor quality" },
+  { value: "scam", label: "Scam" },
+  { value: "overcharge", label: "Overcharge" },
+  { value: "harassment", label: "Harassment" },
+  { value: "other", label: "Other" },
+];
+
+const REPORT_SEVERITIES: Array<{ value: ReportSeverity; label: string }> = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "critical", label: "Critical" },
+];
+
+const MAX_REPORT_FILES = 5;
+const MAX_REPORT_FILE_BYTES = 10 * 1024 * 1024;
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function BuyerOrderExpandedPage() {
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
@@ -50,6 +86,19 @@ export default function BuyerOrderExpandedPage() {
   const [isRequestingRevision, setIsRequestingRevision] = useState(false);
   const [revisionError, setRevisionError] = useState("");
   const [revisionSuccess, setRevisionSuccess] = useState("");
+
+  // report state
+  const [reportCategory, setReportCategory] = useState<ReportCategory>("non_delivery");
+  const [reportSeverity, setReportSeverity] = useState<ReportSeverity>("high");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportMessageIds, setReportMessageIds] = useState("");
+  const [orderCompletedDate, setOrderCompletedDate] = useState("");
+  const [lastSellerResponse, setLastSellerResponse] = useState("");
+  const [reportScreenshots, setReportScreenshots] = useState<File[]>([]);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [reportSuccess, setReportSuccess] = useState("");
+  const [submittedReport, setSubmittedReport] = useState<SubmittedOrderReport | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +184,94 @@ export default function BuyerOrderExpandedPage() {
       setRevisionError(e instanceof Error ? e.message : "Failed to request revision.");
     } finally {
       setIsRequestingRevision(false);
+    }
+  };
+
+  const onSelectReportScreenshots = (files: FileList | null) => {
+    setReportError("");
+
+    if (!files?.length) {
+      setReportScreenshots([]);
+      return;
+    }
+
+    const selected = Array.from(files);
+
+    if (selected.length > MAX_REPORT_FILES) {
+      setReportError(`You can upload up to ${MAX_REPORT_FILES} screenshots.`);
+      setReportScreenshots(selected.slice(0, MAX_REPORT_FILES));
+      return;
+    }
+
+    const oversized = selected.find((file) => file.size > MAX_REPORT_FILE_BYTES);
+    if (oversized) {
+      setReportError(`File \"${oversized.name}\" exceeds 10MB.`);
+      return;
+    }
+
+    setReportScreenshots(selected);
+  };
+
+  const onSubmitReport = async () => {
+    if (!order?._id) return;
+    if (!order?.seller?._id) {
+      setReportError("Seller information is missing for this order.");
+      return;
+    }
+
+    if (!reportDescription.trim()) {
+      setReportError("Please provide a report description.");
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    setReportError("");
+    setReportSuccess("");
+
+    try {
+      const messages = reportMessageIds
+        .split(/[,\n]/)
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      const additionalInfo: Record<string, string> = {};
+
+      if (orderCompletedDate) {
+        additionalInfo.orderCompletedDate = new Date(orderCompletedDate).toISOString();
+      }
+      if (lastSellerResponse) {
+        additionalInfo.lastSellerResponse = new Date(lastSellerResponse).toISOString();
+      }
+
+      const payload = {
+        reportedUserId: order.seller._id,
+        orderId: order._id,
+        category: reportCategory,
+        severity: reportSeverity,
+        description: reportDescription.trim(),
+        evidence:
+          messages.length || Object.keys(additionalInfo).length
+            ? {
+                messages,
+                additionalInfo: Object.keys(additionalInfo).length ? additionalInfo : undefined,
+              }
+            : undefined,
+      };
+
+      const data = await submitBuyerOrderReport(payload, reportScreenshots.length ? reportScreenshots : undefined);
+
+      setSubmittedReport(data.report);
+      const uploaded = typeof data.uploadedScreenshots === "number" ? ` (${data.uploadedScreenshots} screenshot(s) uploaded)` : "";
+      setReportSuccess(`${data.message || "Report submitted successfully."}${uploaded}`);
+      setReportDescription("");
+      setReportMessageIds("");
+      setOrderCompletedDate("");
+      setLastSellerResponse("");
+      setReportScreenshots([]);
+    } catch (e) {
+      setReportError(e instanceof Error ? e.message : "Failed to submit report.");
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
@@ -281,6 +418,7 @@ export default function BuyerOrderExpandedPage() {
                     <select
                       value={rating}
                       onChange={(e) => setRating(Number(e.target.value))}
+                      title="Review rating"
                       className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
                     >
                       <option value={5}>5 - Excellent</option>
@@ -322,6 +460,138 @@ export default function BuyerOrderExpandedPage() {
                 <p className="text-white">Rating: {order.review.rating}/5</p>
                 <p className="text-sm text-gray-200">{order.review.comment || "—"}</p>
                 <p className="text-xs text-gray-400">{formatDate(order.review.reviewedAt)}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-red-500/25 bg-red-500/5 p-5">
+            <h2 className="text-lg font-semibold text-white">Report This Order</h2>
+            <p className="mt-1 text-sm text-gray-400">
+              Report policy violations or suspicious seller behavior related to this order.
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-gray-300">Category</label>
+                <select
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  title="Report category"
+                  className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                >
+                  {REPORT_CATEGORIES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm text-gray-300">Severity</label>
+                <select
+                  value={reportSeverity}
+                  onChange={(e) => setReportSeverity(e.target.value)}
+                  title="Report severity"
+                  className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                >
+                  {REPORT_SEVERITIES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-sm text-gray-300">Description</label>
+              <textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                rows={5}
+                className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none placeholder:text-gray-500"
+                placeholder="Describe what happened, including timeline and impact."
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-sm text-gray-300">Message IDs (optional)</label>
+              <textarea
+                value={reportMessageIds}
+                onChange={(e) => setReportMessageIds(e.target.value)}
+                rows={2}
+                className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none placeholder:text-gray-500"
+                placeholder="msg_id_1, msg_id_2"
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-gray-300">Order Completed Date (optional)</label>
+                <input
+                  type="datetime-local"
+                  value={orderCompletedDate}
+                  onChange={(e) => setOrderCompletedDate(e.target.value)}
+                  title="Order completed date"
+                  className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm text-gray-300">Last Seller Response (optional)</label>
+                <input
+                  type="datetime-local"
+                  value={lastSellerResponse}
+                  onChange={(e) => setLastSellerResponse(e.target.value)}
+                  title="Last seller response date"
+                  className="w-full rounded-md bg-white/10 px-3 py-2 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-sm text-gray-300">Screenshots (optional)</label>
+              <input
+                type="file"
+                multiple
+                accept=".png,.jpg,.jpeg,.webp,.gif,.heic,.heif,.svg,image/*"
+                onChange={(e) => onSelectReportScreenshots(e.target.files)}
+                title="Upload screenshot evidence"
+                className="block w-full text-sm text-gray-300 file:mr-4 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-white/20"
+              />
+              <p className="mt-1 text-xs text-gray-500">Max 5 files, 10MB per file.</p>
+              {!!reportScreenshots.length && (
+                <ul className="mt-2 space-y-1 text-sm text-indigo-300">
+                  {reportScreenshots.map((file) => (
+                    <li key={`${file.name}-${file.lastModified}`}>
+                      {file.name} ({formatFileSize(file.size)})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onSubmitReport}
+                disabled={isSubmittingReport}
+                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-400 disabled:opacity-60"
+              >
+                {isSubmittingReport ? "Submitting Report..." : "Submit Report"}
+              </button>
+            </div>
+
+            {reportError && <p className="mt-3 text-sm text-red-300">{reportError}</p>}
+            {reportSuccess && <p className="mt-3 text-sm text-emerald-400">{reportSuccess}</p>}
+
+            {submittedReport && (
+              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3">
+                <p className="text-sm text-gray-200">Latest report ID: {submittedReport._id}</p>
+                <p className="text-xs text-gray-400">
+                  Status: {submittedReport.status || "under_review"} • Priority: {submittedReport.priority || "n/a"}
+                </p>
               </div>
             )}
           </div>

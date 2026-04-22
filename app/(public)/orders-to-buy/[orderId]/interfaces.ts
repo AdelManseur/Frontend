@@ -108,3 +108,90 @@ export interface RequestRevisionResponse {
   message: string;
   revisionRequest: RevisionRequest;
 }
+
+export type ReportCategory =
+  | "non_delivery"
+  | "fake_service"
+  | "poor_quality"
+  | "scam"
+  | "overcharge"
+  | "harassment"
+  | "other";
+
+export type ReportSeverity = "low" | "medium" | "high" | "critical" | string;
+
+export interface ReportEvidenceAdditionalInfo {
+  orderCompletedDate?: string;
+  lastSellerResponse?: string;
+  [key: string]: unknown;
+}
+
+export interface ReportEvidencePayload {
+  screenshots?: string[];
+  messages?: string[];
+  files?: string[];
+  additionalInfo?: ReportEvidenceAdditionalInfo;
+}
+
+export interface SubmitOrderReportPayload {
+  reportedUserId: string;
+  orderId: string;
+  category: ReportCategory;
+  severity: ReportSeverity;
+  description: string;
+  evidence?: ReportEvidencePayload;
+}
+
+export interface ReportedUserSummary {
+  _id: string;
+  name: string;
+  email?: string;
+  username?: string;
+}
+
+export interface ReportedOrderSummary {
+  _id: string;
+  price?: number;
+  status?: string;
+}
+
+export interface ReporterCredibility {
+  fraudScore?: number;
+  totalOrders?: number;
+  accountAge?: number;
+  verifiedAccount?: boolean;
+  credibilityScore?: number;
+  priorReports?: number;
+  priorReportsAccepted?: number;
+}
+
+export interface SubmittedOrderReport {
+  _id: string;
+  reporter?: string;
+  reportedUser?: ReportedUserSummary;
+  order?: ReportedOrderSummary;
+  category: ReportCategory;
+  severity: ReportSeverity;
+  description: string;
+  evidence?: ReportEvidencePayload;
+  reporterCredibility?: ReporterCredibility;
+  status?: string;
+  priority?: string;
+  createdAt?: string;
+}
+
+export interface SubmitOrderReportResponse {
+  message: string;
+  report: SubmittedOrderReport;
+  credibilityScore?: number;
+  priority?: string;
+  uploadedScreenshots?: number;
+}
+
+export interface SubmitOrderReportError {
+  message?: string;
+  error?: string;
+  reason?: string;
+  existingReport?: string;
+  requirements?: Record<string, string>;
+}

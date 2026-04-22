@@ -7,7 +7,7 @@ import type {
   FraudChecksResponse,
 } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 function buildApiUrl(path: string): string {
   const base = RAW_BASE.replace(/\/+$/, "");
