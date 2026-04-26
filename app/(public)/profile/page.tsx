@@ -1,21 +1,78 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getMyProfile } from "./req-res";
-import type { UserProfile } from "./interfaces";
+import { motion } from "motion/react";
+import { Mail, Phone, MapPin, Edit, User, Tag, Briefcase } from "lucide-react";
 
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string;
-}) {
+// Mock interfaces - replace with your actual types
+interface UserAddress {
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+}
+
+interface UserSpecializedProfile {
+  aboutMe?: string;
+  additionalPhones?: string[];
+  additionalEmails?: string[];
+  niches?: string[];
+}
+
+interface UserProfile {
+  name: string;
+  email: string;
+  phone?: string;
+  bday?: string;
+  pfp?: string;
+  address?: UserAddress;
+  fieldsOfInterest?: string[];
+  specializedProfile?: UserSpecializedProfile;
+}
+
+// Mock function - replace with actual API call
+const getMyProfile = async () => {
+  return new Promise<{ logged: boolean; message?: string; user: UserProfile }>((resolve) => {
+    setTimeout(() => {
+      resolve({
+        logged: true,
+        user: {
+          name: "Jane Smith",
+          email: "jane@example.com",
+          phone: "+213 555 123 456",
+          bday: "1995-06-15",
+          pfp: "https://placehold.co/200x200/e5e7eb/1f2937?text=JS",
+          address: {
+            street: "123 Main Street",
+            city: "Algiers",
+            postalCode: "16000",
+            country: "Algeria",
+          },
+          fieldsOfInterest: ["Design", "Development", "Marketing"],
+          specializedProfile: {
+            aboutMe: "Passionate freelancer with 5+ years of experience in web development and design. I love creating beautiful, functional websites that help businesses grow.",
+            additionalPhones: ["+213 555 987 654"],
+            additionalEmails: ["jane.business@example.com"],
+            niches: ["SaaS Design", "E-commerce Development", "Brand Identity"],
+          },
+        },
+      });
+    }, 1000);
+  });
+};
+
+function InfoRow({ label, value, icon: Icon }: { label: string; value?: string; icon?: any }) {
   return (
-    <div className="grid gap-1 border-b border-white/10 py-4 md:grid-cols-[180px_1fr]">
-      <p className="text-sm text-gray-400">{label}</p>
-      <p className="text-sm text-white">{value?.trim() ? value : "Not provided"}</p>
+    <div className="flex items-start gap-4 py-4 border-b border-neutral-200 last:border-0">
+      {Icon && (
+        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
+          <Icon className="h-5 w-5 text-neutral-600" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-neutral-500 mb-1">{label}</p>
+        <p className="text-sm text-neutral-900">{value?.trim() ? value : "Not provided"}</p>
+      </div>
     </div>
   );
 }
@@ -51,11 +108,24 @@ export default function SellerProfilePage() {
   }, []);
 
   if (isLoading) {
-    return <div className="grid min-h-[260px] place-items-center">Loading profile...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-neutral-900 border-r-transparent"></div>
+          <p className="mt-4 text-sm text-neutral-600">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <div className="text-red-400">{error || "Profile not found."}</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <p className="text-red-600">{error || "Profile not found."}</p>
+        </div>
+      </div>
+    );
   }
 
   const fullAddress = [
@@ -68,121 +138,203 @@ export default function SellerProfilePage() {
     .join(", ");
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="border-b border-white/10 pb-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="flex items-start gap-5">
-            <img
-              src={user.pfp || "https://placehold.co/120x120/1f2937/e5e7eb?text=Profile"}
-              alt={user.name}
-              className="h-24 w-24 rounded-full object-cover ring-2 ring-white/10"
-            />
-
-            <div className="pt-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Seller Profile</p>
-              <h1 className="mt-2 text-3xl font-semibold text-white">{user.name}</h1>
-              <p className="mt-2 text-sm text-gray-300">{user.email}</p>
-              {user.phone && <p className="mt-1 text-sm text-gray-400">{user.phone}</p>}
-            </div>
-          </div>
-
-          <Link
-            href="/profile-details"
-            className="inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200"
+    <main className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-neutral-200 bg-neutral-50">
+        <div className="mx-auto max-w-5xl px-6 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between"
           >
-            <span>Edit profile details</span>
-            <span>→</span>
-          </Link>
+            <div className="flex items-start gap-6">
+              <motion.img
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                src={user.pfp || "https://placehold.co/120x120/e5e7eb/1f2937?text=Profile"}
+                alt={user.name}
+                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
+              />
+
+              <div className="pt-1">
+                <div className="inline-block rounded-full bg-neutral-200 px-3 py-1 text-xs font-medium text-neutral-700 mb-3">
+                  Seller Profile
+                </div>
+                <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
+                  {user.name}
+                </h1>
+                <p className="mt-2 text-sm text-neutral-600">{user.email}</p>
+                {user.phone && <p className="mt-1 text-sm text-neutral-600">{user.phone}</p>}
+              </div>
+            </div>
+
+            <motion.a
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              href="/profile-details"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-medium text-neutral-900 transition-all hover:border-neutral-400 hover:bg-neutral-100"
+            >
+              <Edit className="h-4 w-4" />
+              Edit profile
+            </motion.a>
+          </motion.div>
         </div>
       </div>
 
-      <section className="pt-8">
-        <h2 className="text-lg font-semibold text-white">Basic Information</h2>
-        <div className="mt-4">
-          <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Phone" value={user.phone} />
-          <InfoRow
-            label="Birthday"
-            value={user.bday ? new Date(user.bday).toLocaleDateString() : ""}
-          />
-          <InfoRow label="Address" value={fullAddress} />
-        </div>
-      </section>
+      {/* Content */}
+      <div className="mx-auto max-w-5xl px-6 py-12">
+        <div className="space-y-12">
+          {/* Basic Information */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="rounded-3xl border border-neutral-200 bg-white p-8"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
+                <User className="h-5 w-5 text-neutral-900" />
+              </div>
+              <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+                Basic Information
+              </h2>
+            </div>
+            <div className="space-y-0">
+              <InfoRow label="Email" value={user.email} icon={Mail} />
+              <InfoRow label="Phone" value={user.phone} icon={Phone} />
+              <InfoRow
+                label="Birthday"
+                value={user.bday ? new Date(user.bday).toLocaleDateString() : ""}
+              />
+              <InfoRow label="Address" value={fullAddress} icon={MapPin} />
+            </div>
+          </motion.section>
 
-      <section className="border-t border-white/10 pt-8">
-        <h2 className="text-lg font-semibold text-white">About</h2>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-300">
-          {user.specializedProfile?.aboutMe?.trim() || "No personal description added yet."}
-        </p>
-      </section>
+          {/* About */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="rounded-3xl border border-neutral-200 bg-white p-8"
+          >
+            <h2 className="text-xl font-semibold tracking-tight text-neutral-900 mb-6">About</h2>
+            <p className="text-sm leading-relaxed text-neutral-700">
+              {user.specializedProfile?.aboutMe?.trim() || "No personal description added yet."}
+            </p>
+          </motion.section>
 
-      <section className="border-t border-white/10 pt-8">
-        <h2 className="text-lg font-semibold text-white">Fields of Interest</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(user.fieldsOfInterest ?? []).length > 0 ? (
-            user.fieldsOfInterest?.map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-200"
-              >
-                {item}
-              </span>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400">No fields of interest added.</p>
-          )}
-        </div>
-      </section>
+          {/* Fields of Interest & Niches */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Fields of Interest */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="rounded-3xl border border-neutral-200 bg-white p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
+                  <Tag className="h-5 w-5 text-neutral-900" />
+                </div>
+                <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
+                  Fields of Interest
+                </h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(user.fieldsOfInterest ?? []).length > 0 ? (
+                  user.fieldsOfInterest?.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-900"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-sm text-neutral-500">No fields of interest added.</p>
+                )}
+              </div>
+            </motion.section>
 
-      <section className="border-t border-white/10 pt-8">
-        <h2 className="text-lg font-semibold text-white">Niches</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(user.specializedProfile?.niches ?? []).length > 0 ? (
-            user.specializedProfile?.niches?.map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-xs text-amber-200"
-              >
-                {item}
-              </span>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400">No niches added.</p>
-          )}
-        </div>
-      </section>
-
-      <section className="grid gap-10 border-t border-white/10 pt-8 md:grid-cols-2">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Additional Phone Numbers</h2>
-          <div className="mt-4 space-y-3">
-            {(user.specializedProfile?.additionalPhones ?? []).length > 0 ? (
-              user.specializedProfile?.additionalPhones?.map((phone, index) => (
-                <p key={`${phone}-${index}`} className="text-sm text-gray-300">
-                  {phone}
-                </p>
-              ))
-            ) : (
-              <p className="text-sm text-gray-400">No additional phone numbers.</p>
-            )}
+            {/* Niches */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="rounded-3xl border border-neutral-200 bg-white p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
+                  <Briefcase className="h-5 w-5 text-neutral-900" />
+                </div>
+                <h2 className="text-lg font-semibold tracking-tight text-neutral-900">Niches</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(user.specializedProfile?.niches ?? []).length > 0 ? (
+                  user.specializedProfile?.niches?.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-900"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-sm text-neutral-500">No niches added.</p>
+                )}
+              </div>
+            </motion.section>
           </div>
-        </div>
 
-        <div>
-          <h2 className="text-lg font-semibold text-white">Additional Emails</h2>
-          <div className="mt-4 space-y-3">
-            {(user.specializedProfile?.additionalEmails ?? []).length > 0 ? (
-              user.specializedProfile?.additionalEmails?.map((email, index) => (
-                <p key={`${email}-${index}`} className="text-sm text-gray-300">
-                  {email}
-                </p>
-              ))
-            ) : (
-              <p className="text-sm text-gray-400">No additional emails.</p>
-            )}
-          </div>
+          {/* Additional Contact */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="rounded-3xl border border-neutral-200 bg-white p-8"
+          >
+            <h2 className="text-xl font-semibold tracking-tight text-neutral-900 mb-6">
+              Additional Contact
+            </h2>
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-medium text-neutral-900 mb-4">Phone Numbers</h3>
+                <div className="space-y-3">
+                  {(user.specializedProfile?.additionalPhones ?? []).length > 0 ? (
+                    user.specializedProfile?.additionalPhones?.map((phone, index) => (
+                      <div key={`${phone}-${index}`} className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-neutral-500" />
+                        <p className="text-sm text-neutral-700">{phone}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-neutral-500">No additional phone numbers.</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-neutral-900 mb-4">Email Addresses</h3>
+                <div className="space-y-3">
+                  {(user.specializedProfile?.additionalEmails ?? []).length > 0 ? (
+                    user.specializedProfile?.additionalEmails?.map((email, index) => (
+                      <div key={`${email}-${index}`} className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-neutral-500" />
+                        <p className="text-sm text-neutral-700">{email}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-neutral-500">No additional emails.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.section>
         </div>
-      </section>
-    </div>
+      </div>
+    </main>
   );
 }

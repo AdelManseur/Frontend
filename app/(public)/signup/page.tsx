@@ -1,9 +1,10 @@
 "use client";
 
-import { UserCircleIcon } from "lucide-react";
+import { UserCircleIcon, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { ChangeEvent, FormEvent, useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { signupUser } from "./req-res";
 
 interface SignupMetadata {
   name: string;
@@ -17,6 +18,7 @@ interface SignupMetadata {
     postalCode: string;
     country: string;
   };
+  fieldsOfInterest: string[];
 }
 
 const initialForm: SignupMetadata = {
@@ -31,23 +33,25 @@ const initialForm: SignupMetadata = {
     postalCode: "",
     country: "",
   },
+  fieldsOfInterest: [],
 };
 
-// Mock function - replace with actual API call
-const signupUser = async (data: { metadata: SignupMetadata; pfp: File | null; folder: string }) => {
-  return new Promise<{ message: string; redirect: string }>((resolve) => {
-    setTimeout(() => {
-      resolve({ 
-        message: "Account created successfully", 
-        redirect: "/verify-otp" 
-      });
-    }, 1000);
-  });
-};
+const AVAILABLE_FIELDS = [
+  "Design",
+  "Development",
+  "Marketing",
+  "Translation",
+  "Video Editing",
+  "Writing",
+  "Photography",
+  "Music & Audio",
+  "Business",
+  "Data Analysis",
+];
 
-export default function SignupPage() {
+export default function SignupForm() {
   const router = useRouter();
-
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<SignupMetadata>(initialForm);
   const [pfp, setPfp] = useState<File | null>(null);
   const [error, setError] = useState("");
@@ -55,6 +59,8 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const totalSteps = 4;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,26 +85,65 @@ export default function SignupPage() {
     }));
   };
 
+  const toggleFieldOfInterest = (field: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      fieldsOfInterest: prev.fieldsOfInterest.includes(field)
+        ? prev.fieldsOfInterest.filter((f) => f !== field)
+        : [...prev.fieldsOfInterest, field],
+    }));
+  };
+
   const handlePfpChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setPfp(file);
   };
 
-  const validateForm = (data: SignupMetadata): string | null => {
-    const email = data.email.trim();
-    const phoneDigits = data.phone.replace(/\D/g, "");
+  const validateStep = (step: number): string | null => {
+    switch (step) {
+      case 1:
+        if (!formData.name.trim()) return "Username is required.";
+        if (!pfp) return "Please upload a profile photo.";
+        return null;
+      case 2:
+        const email = formData.email.trim();
+        const phoneDigits = formData.phone.replace(/\D/g, "");
+        if (!email) return "Email is required.";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
+        if (phoneDigits.length < 8) return "Phone number must be at least 8 digits.";
+        if (!formData.password || formData.password.length < 8) return "Password must be at least 8 characters.";
+        return null;
+      case 3:
+        if (!formData.address.country.trim()) return "Country is required.";
+        if (!formData.address.city.trim()) return "City is required.";
+        if (!formData.address.street.trim()) return "Street is required.";
+        if (!formData.address.postalCode.trim()) return "Postal code is required.";
+        return null;
+      case 4:
+        if (formData.fieldsOfInterest.length === 0) return "Please select at least one field of interest.";
+        return null;
+      default:
+        return null;
+    }
+  };
 
-    if (!data.name.trim()) return "Name is required.";
-    if (!email) return "Email is required.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
-    if (phoneDigits.length < 8) return "Phone number must be at least 8 digits.";
-    if (!data.password || data.password.length < 8) return "Password must be at least 8 characters.";
-    if (!data.address.country.trim()) return "Country is required.";
-    if (!data.address.city.trim()) return "City is required.";
-    if (!data.address.street.trim()) return "Street is required.";
-    if (!data.address.postalCode.trim()) return "Postal code is required.";
+  const handleNext = () => {
+    const validationError = validateStep(currentStep);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError("");
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
 
-    return null;
+  const handleBack = () => {
+    setError("");
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -106,7 +151,7 @@ export default function SignupPage() {
     setError("");
     setSuccess("");
 
-    const validationError = validateForm(formData);
+    const validationError = validateStep(currentStep);
     if (validationError) {
       setError(validationError);
       return;
@@ -120,8 +165,8 @@ export default function SignupPage() {
         pfp,
         folder: "users",
       });
+      setSuccess(`${result.message}. Redirecting to verification...`);
       router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
-      setSuccess(`${result.message}. Continue at: ${result.redirect}`);
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Unexpected error";
       setError(message);
@@ -135,84 +180,122 @@ export default function SignupPage() {
     setPfp(null);
     setError("");
     setSuccess("");
+    setCurrentStep(1);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#1d1d1f]">
+    <main className="min-h-screen bg-white text-neutral-900">
       {/* Navbar */}
-      <nav
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6 }}
         className={`fixed left-0 right-0 top-0 z-50 border-b transition-all duration-300 ${
-          scrolled ? "backdrop-blur-xl bg-white/85 border-[#1d1d1f]/10" : "bg-white border-[#1d1d1f]/10"
+          scrolled ? "backdrop-blur-xl bg-white/85 border-neutral-200" : "bg-white border-neutral-200"
         }`}
-        style={{
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        }}
       >
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-[#1d1d1f]">
-                <rect x="3" y="8" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <path d="M7 8V6C7 4.34315 8.34315 3 10 3C11.6569 3 13 4.34315 13 6V8" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              </svg>
-              <span className="text-xl" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}>
-                JobMe
-              </span>
-            </Link>
+            <a href="/" className="text-xl font-semibold tracking-tight">
+              JobMe
+            </a>
             <div className="flex gap-3">
-              <Link
+              <a
                 href="/login"
-                className="rounded-[980px] border border-[#1a6b3c]/25 px-5 py-1.5 text-sm text-[#1a6b3c] transition-colors hover:border-[#1a6b3c]/40 hover:text-[#1e7d46]"
-                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
+                className="rounded-full border border-neutral-300 px-5 py-1.5 text-sm text-neutral-900 transition-colors hover:border-neutral-400"
               >
                 Log in
-              </Link>
+              </a>
             </div>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Header */}
       <section className="mx-auto max-w-4xl px-6 pt-32 pb-12">
         <div className="text-center">
-          <div className="inline-block rounded-[980px] bg-[#1a6b3c] px-4 py-1.5 text-xs text-white" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-block rounded-full bg-neutral-100 px-4 py-1.5 text-xs text-neutral-900 font-medium"
+          >
             Join the marketplace
-          </div>
-          <h1 className="mt-6 text-5xl" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700, letterSpacing: '-0.02em' }}>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mt-6 text-5xl font-semibold tracking-tight"
+          >
             Create your account
-          </h1>
-          <p className="mt-4 text-lg text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
-            Join Algeria's first freelance marketplace with face verification
-          </p>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-4 text-lg text-neutral-600"
+          >
+            Join Algeria's first freelance marketplace
+          </motion.p>
         </div>
+
+        {/* Progress Indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mt-12 flex items-center justify-center gap-2"
+        >
+          {Array.from({ length: totalSteps }).map((_, index) => (
+            <div
+              key={index}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index + 1 === currentStep
+                  ? "w-12 bg-neutral-900"
+                  : index + 1 < currentStep
+                  ? "w-8 bg-neutral-400"
+                  : "w-8 bg-neutral-200"
+              }`}
+            />
+          ))}
+        </motion.div>
+        <p className="mt-4 text-center text-sm text-neutral-500">
+          Step {currentStep} of {totalSteps}
+        </p>
       </section>
 
       {/* Form Section */}
       <section className="mx-auto max-w-3xl px-6 pb-24">
-        <div className="rounded-[18px] border border-[#1d1d1f]/10 bg-[#f5f5f7] p-8 sm:p-10">
+        <div className="rounded-3xl border border-neutral-200 bg-neutral-50 p-8 sm:p-10">
           <form onSubmit={handleSubmit} noValidate>
-            <div className="space-y-12">
-              {/* Profile Section */}
-              <div className="border-b border-[#1d1d1f]/10 pb-10">
-                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
-                  Profile
-                </h2>
-                <p className="mt-2 text-sm text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
-                  This information will be displayed publicly so be careful what you share.
-                </p>
-
-                <div className="mt-8 space-y-6">
-                  {/* Username */}
+            <AnimatePresence mode="wait">
+              {/* Step 1: Profile */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
                   <div>
-                    <label htmlFor="name" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Username
-                    </label>
-                    <div className="mt-2">
-                      <div className="flex items-center rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 transition-all focus-within:border-[#1a6b3c] focus-within:ring-2 focus-within:ring-[#1a6b3c]/20">
-                        <span className="text-sm text-[#6e6e73] select-none" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-                          jobme.dz/
-                        </span>
+                    <h2 className="text-2xl font-semibold tracking-tight">Profile</h2>
+                    <p className="mt-2 text-sm text-neutral-600">
+                      This information will be displayed publicly so be careful what you share.
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Username */}
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Username
+                      </label>
+                      <div className="flex items-center rounded-2xl border border-neutral-300 bg-white px-4 transition-all focus-within:border-neutral-900 focus-within:ring-2 focus-within:ring-neutral-900/20">
+                        <span className="text-sm text-neutral-500 select-none">jobme.dz/</span>
                         <input
                           id="name"
                           name="name"
@@ -220,267 +303,380 @@ export default function SignupPage() {
                           placeholder="janesmith"
                           value={formData.name}
                           onChange={(e) => updateField("name", e.target.value)}
-                          className="block min-w-0 grow bg-transparent py-2.5 px-2 text-[#1d1d1f] placeholder:text-[#6e6e73]/50 focus:outline-none"
-                          style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
+                          className="block min-w-0 grow bg-transparent py-3 px-2 text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Photo */}
-                  <div>
-                    <label className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Photo
-                    </label>
-                    <div className="mt-2 flex items-center gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1d1d1f]/5">
-                        <UserCircleIcon className="h-8 w-8 text-[#6e6e73]" />
+                    {/* Photo */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-900 mb-2">
+                        Profile Photo
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">
+                          {pfp ? (
+                            <img
+                              src={URL.createObjectURL(pfp)}
+                              alt="Preview"
+                              className="h-16 w-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <UserCircleIcon className="h-10 w-10 text-neutral-500" />
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="rounded-full border border-neutral-300 px-5 py-2 text-sm text-neutral-900 transition-all hover:border-neutral-400 hover:bg-neutral-100"
+                        >
+                          Upload photo
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          id="pfp-upload"
+                          name="pfp"
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={handlePfpChange}
+                        />
+                        {pfp && (
+                          <p className="text-xs text-neutral-600">{pfp.name}</p>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-[980px] border border-[#1a6b3c]/25 px-5 py-2 text-sm text-[#1a6b3c] transition-all hover:border-[#1a6b3c]/40 hover:text-[#1e7d46]"
-                        style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                      >
-                        Upload photo
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        id="pfp-upload"
-                        name="pfp"
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={handlePfpChange}
-                      />
-                      {pfp && (
-                        <p className="text-xs text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-                          {pfp.name}
-                        </p>
-                      )}
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              )}
 
-              {/* Personal Information Section */}
-              <div className="border-b border-[#1d1d1f]/10 pb-10">
-                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
-                  Personal Information
-                </h2>
-
-                <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                  {/* Email */}
+              {/* Step 2: Personal Information */}
+              {currentStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
                   <div>
-                    <label htmlFor="email" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Email address
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      value={formData.email}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
+                    <h2 className="text-2xl font-semibold tracking-tight">Personal Information</h2>
+                    <p className="mt-2 text-sm text-neutral-600">
+                      We need this to verify your account and keep it secure.
+                    </p>
                   </div>
 
-                  {/* Phone */}
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Email */}
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Email address
+                      </label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        value={formData.email}
+                        onChange={(e) => updateField("email", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Phone number
+                      </label>
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={formData.phone}
+                        onChange={(e) => updateField("phone", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+
+                    {/* Birth date */}
+                    <div>
+                      <label htmlFor="bday" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Birth date
+                      </label>
+                      <input
+                        id="bday"
+                        name="bday"
+                        type="date"
+                        value={formData.bday}
+                        onChange={(e) => updateField("bday", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Password
+                      </label>
+                      <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={formData.password}
+                        onChange={(e) => updateField("password", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Address */}
+              {currentStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
                   <div>
-                    <label htmlFor="phone" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Phone number
-                    </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      autoComplete="tel"
-                      value={formData.phone}
-                      onChange={(e) => updateField("phone", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
+                    <h2 className="text-2xl font-semibold tracking-tight">Address</h2>
+                    <p className="mt-2 text-sm text-neutral-600">
+                      Your location helps us connect you with relevant opportunities.
+                    </p>
                   </div>
 
-                  {/* Birth date */}
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Country */}
+                    <div className="sm:col-span-2">
+                      <label htmlFor="country" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Country
+                      </label>
+                      <select
+                        id="country"
+                        name="country"
+                        value={formData.address.country}
+                        onChange={(e) => updateAddressField("country", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      >
+                        <option value="">Select country</option>
+                        <option value="Algeria">Algeria</option>
+                        <option value="Tunisia">Tunisia</option>
+                        <option value="Morocco">Morocco</option>
+                        <option value="Egypt">Egypt</option>
+                      </select>
+                    </div>
+
+                    {/* Street */}
+                    <div className="sm:col-span-2">
+                      <label htmlFor="street" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Street address
+                      </label>
+                      <input
+                        id="street"
+                        name="street"
+                        type="text"
+                        value={formData.address.street}
+                        onChange={(e) => updateAddressField("street", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+
+                    {/* City */}
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-neutral-900 mb-2">
+                        City
+                      </label>
+                      <input
+                        id="city"
+                        name="city"
+                        type="text"
+                        value={formData.address.city}
+                        onChange={(e) => updateAddressField("city", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+
+                    {/* Postal Code */}
+                    <div>
+                      <label htmlFor="postalCode" className="block text-sm font-medium text-neutral-900 mb-2">
+                        Postal code
+                      </label>
+                      <input
+                        id="postalCode"
+                        name="postalCode"
+                        type="text"
+                        value={formData.address.postalCode}
+                        onChange={(e) => updateAddressField("postalCode", e.target.value)}
+                        className="block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 4: Fields of Interest */}
+              {currentStep === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
                   <div>
-                    <label htmlFor="bday" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Birth date
-                    </label>
-                    <input
-                      id="bday"
-                      name="bday"
-                      type="date"
-                      value={formData.bday}
-                      onChange={(e) => updateField("bday", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
+                    <h2 className="text-2xl font-semibold tracking-tight">Fields of Interest</h2>
+                    <p className="mt-2 text-sm text-neutral-600">
+                      Select the categories you're interested in. This helps us recommend relevant sellers and gigs.
+                    </p>
                   </div>
 
-                  {/* Password */}
-                  <div>
-                    <label htmlFor="password" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Password
-                    </label>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={formData.password}
-                      onChange={(e) => updateField("password", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {AVAILABLE_FIELDS.map((field) => {
+                      const isSelected = formData.fieldsOfInterest.includes(field);
+                      return (
+                        <motion.button
+                          key={field}
+                          type="button"
+                          onClick={() => toggleFieldOfInterest(field)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`relative rounded-2xl border-2 p-4 text-left transition-all ${
+                            isSelected
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : "border-neutral-200 bg-white text-neutral-900 hover:border-neutral-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{field}</span>
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-white"
+                              >
+                                <Check className="h-3 w-3 text-neutral-900" />
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
                   </div>
-                </div>
-              </div>
 
-              {/* Address Section */}
-              <div>
-                <h2 className="text-xl text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 600 }}>
-                  Address
-                </h2>
-
-                <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                  {/* Country */}
-                  <div className="sm:col-span-2">
-                    <label htmlFor="country" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Country
-                    </label>
-                    <select
-                      id="country"
-                      name="country"
-                      value={formData.address.country}
-                      onChange={(e) => updateAddressField("country", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
+                  {formData.fieldsOfInterest.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl bg-neutral-100 p-4"
                     >
-                      <option value="">Select country</option>
-                      <option value="Algeria">Algeria</option>
-                      <option value="Tunisia">Tunisia</option>
-                      <option value="Morocco">Morocco</option>
-                      <option value="Egypt">Egypt</option>
-                    </select>
-                  </div>
-
-                  {/* Street */}
-                  <div className="sm:col-span-2">
-                    <label htmlFor="street" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Street address
-                    </label>
-                    <input
-                      id="street"
-                      name="street"
-                      type="text"
-                      value={formData.address.street}
-                      onChange={(e) => updateAddressField("street", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
-                  </div>
-
-                  {/* City */}
-                  <div>
-                    <label htmlFor="city" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      City
-                    </label>
-                    <input
-                      id="city"
-                      name="city"
-                      type="text"
-                      value={formData.address.city}
-                      onChange={(e) => updateAddressField("city", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
-                  </div>
-
-                  {/* Postal Code */}
-                  <div>
-                    <label htmlFor="postalCode" className="block text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}>
-                      Postal code
-                    </label>
-                    <input
-                      id="postalCode"
-                      name="postalCode"
-                      type="text"
-                      value={formData.address.postalCode}
-                      onChange={(e) => updateAddressField("postalCode", e.target.value)}
-                      className="mt-2 block w-full rounded-[8px] border border-[#1d1d1f]/20 bg-white px-3 py-2.5 text-[#1d1d1f] transition-all focus:border-[#1a6b3c] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c]/20"
-                      style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+                      <p className="text-sm text-neutral-600">
+                        Selected: <span className="font-medium text-neutral-900">{formData.fieldsOfInterest.length} field{formData.fieldsOfInterest.length !== 1 ? 's' : ''}</span>
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Error and Success Messages */}
-            {error && (
-              <div className="mt-6 rounded-[8px] bg-red-50 border border-red-200 px-4 py-3">
-                <p className="text-sm text-red-800" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
-                  {error}
-                </p>
-              </div>
-            )}
-            {success && (
-              <div className="mt-6 rounded-[8px] bg-green-50 border border-green-200 px-4 py-3">
-                <p className="text-sm text-green-800" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
-                  {success}
-                </p>
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-6 rounded-2xl bg-red-50 border border-red-200 px-4 py-3"
+                >
+                  <p className="text-sm text-red-800">{error}</p>
+                </motion.div>
+              )}
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-6 rounded-2xl bg-green-50 border border-green-200 px-4 py-3"
+                >
+                  <p className="text-sm text-green-800">{success}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex items-center justify-end gap-4">
-              <button 
-                type="button" 
-                onClick={handleCancel} 
-                className="text-sm text-[#1d1d1f] transition-colors hover:text-[#1a6b3c]"
-                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="rounded-[980px] bg-[#1a6b3c] px-6 py-2.5 text-sm text-white transition-all hover:bg-[#1e7d46] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}
-              >
-                {isLoading ? "Creating account..." : "Create account"}
-              </button>
+            <div className="mt-8 flex items-center justify-between gap-4">
+              <div>
+                {currentStep > 1 && (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    type="button"
+                    onClick={handleBack}
+                    className="inline-flex items-center gap-2 text-sm text-neutral-600 transition-colors hover:text-neutral-900"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </motion.button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="text-sm text-neutral-600 transition-colors hover:text-neutral-900"
+                >
+                  Cancel
+                </button>
+                {currentStep < totalSteps ? (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={handleNext}
+                    className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm text-white transition-all hover:bg-neutral-800"
+                  >
+                    Next
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm text-white transition-all hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Creating account..." : "Create account"}
+                    {!isLoading && <Check className="h-4 w-4" />}
+                  </motion.button>
+                )}
+              </div>
             </div>
           </form>
         </div>
 
         {/* Login Link */}
-        <p className="mt-8 text-center text-sm text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
+        <p className="mt-8 text-center text-sm text-neutral-600">
           Already have an account?{" "}
-          <Link href="/login" className="text-[#1a6b3c] transition-colors hover:text-[#1e7d46]">
+          <a href="/login" className="text-neutral-900 font-medium transition-colors hover:underline">
             Log in
-          </Link>
+          </a>
         </p>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#1d1d1f]/10 py-12">
+      <footer className="bg-white border-t border-neutral-200 py-12">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="text-[#1d1d1f]">
-                <rect x="3" y="8" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <path d="M7 8V6C7 4.34315 8.34315 3 10 3C11.6569 3 13 4.34315 13 6V8" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              </svg>
-              <span className="text-sm text-[#1d1d1f]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 700 }}>
-                JobMe
-              </span>
-            </div>
-            <p className="text-xs text-[#6e6e73]" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 400 }}>
-              © 2024 JobMe. All rights reserved.
-            </p>
+            <div className="text-sm font-semibold">JobMe</div>
+            <p className="text-xs text-neutral-500">© 2026 JobMe. All rights reserved.</p>
           </div>
         </div>
       </footer>
