@@ -1,11 +1,16 @@
 import type {
   AddReviewPayload,
   AddReviewResponse,
+  BuyerExpandedOrder,
+  GetBuyerOrderByIdResponse,
   RequestRevisionPayload,
   RequestRevisionResponse,
+  SubmitOrderReportError,
+  SubmitOrderReportPayload,
+  SubmitOrderReportResponse,
 } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
 export async function getBuyerOrderById(orderId: string): Promise<BuyerExpandedOrder> {
@@ -84,6 +89,55 @@ export async function requestBuyerRevision(
 
   if (!data?.revisionRequest) {
     throw new Error("Revision request missing in response.");
+  }
+
+  return data;
+}
+
+function buildSubmitReportErrorMessage(data: SubmitOrderReportError | null, status: number) {
+  const base = data?.message || data?.error || `Failed to submit report (${status})`;
+  const reason = data?.reason ? ` Reason: ${data.reason}` : "";
+  return `${base}${reason}`.trim();
+}
+
+export async function submitBuyerOrderReport(
+  payload: SubmitOrderReportPayload,
+  screenshots?: File[]
+): Promise<SubmitOrderReportResponse> {
+  const url = `${API_BASE}/reports/submit`;
+  const hasFiles = Boolean(screenshots?.length);
+
+  const init: RequestInit = {
+    method: "POST",
+    credentials: "include",
+  };
+
+  if (hasFiles) {
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(payload));
+
+    for (const file of screenshots ?? []) {
+      formData.append("screenshots", file);
+    }
+
+    init.body = formData;
+  } else {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(payload);
+  }
+
+  const res = await fetch(url, init);
+
+  const rawData = (await res.json().catch(() => null)) as SubmitOrderReportResponse | SubmitOrderReportError | null;
+
+  if (!res.ok) {
+    throw new Error(buildSubmitReportErrorMessage(rawData as SubmitOrderReportError | null, res.status));
+  }
+
+  const data = rawData as SubmitOrderReportResponse | null;
+
+  if (!data?.report) {
+    throw new Error("Report missing in response.");
   }
 
   return data;

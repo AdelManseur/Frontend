@@ -134,9 +134,9 @@ export default function ControlOrdersPage() {
                     return (
                       <tr key={key}>
                         <td>{o.orderNumber || o._id || o.id || "-"}</td>
-                        <td>{o.title || "-"}</td>
-                        <td>{o.buyerName || "-"}</td>
-                        <td>{o.sellerName || "-"}</td>
+                        {/*<td>{o.title || "-"}</td>*/}
+                        <td>{o.buyerName || o.buyer._id || "-"}</td>
+                        <td>{o.sellerName || o.seller._id || "-"}</td>
                         <td>{o.status}</td>
                         <td>${Number(o.price || 0).toLocaleString()}</td>
                         <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : "-"}</td>

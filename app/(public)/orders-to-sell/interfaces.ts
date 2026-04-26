@@ -20,10 +20,12 @@ export interface SellerOrderBuyer {
 
 export interface SellerOrder {
   _id: string;
+  reportId?: string;
   gig: SellerOrderGig;
   buyer: SellerOrderBuyer;
   price: number;
   status: SellerOrderStatus;
+  reported?: boolean;
   expectedDelivery: string;
   createdAt: string;
 }

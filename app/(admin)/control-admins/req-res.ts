@@ -9,17 +9,6 @@ import type {
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
-function buildApiUrl(path: string): string {
-  const base = RAW_BASE.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-
-  if (base.endsWith("/api") && p.startsWith("/api/")) {
-    return `${base}${p.slice(4)}`;
-  }
-
-  return `${base}${p}`;
-}
-
 export async function listAdmins(token: string): Promise<AdminItem[]> {
   const res = await fetch(RAW_BASE + "/api/admin/list", {
     method: "GET",
@@ -50,7 +39,7 @@ export async function updateAdminPermissions(
   payload: UpdateAdminPermissionsPayload,
   token: string
 ): Promise<UpdateAdminPermissionsResponse> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
   if (!adminId) throw new Error("Missing admin ID.");
 
   const res = await fetch(RAW_BASE + `/api/admin/${adminId}/permissions`, {
@@ -78,7 +67,7 @@ export async function updateAdminStatus(
   payload: UpdateAdminStatusPayload,
   token: string
 ): Promise<UpdateAdminStatusResponse> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
   if (!adminId) throw new Error("Missing admin ID.");
 
   const res = await fetch(RAW_BASE + `/api/admin/${adminId}/status`, {

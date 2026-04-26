@@ -1,6 +1,6 @@
 import type { ApiMessageResponse, BuyerGigDetails, CreateSimpleOrderPayload, CreateSimpleOrderResponse, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 function pickGig(payload: GigDetailsResponse | BuyerGigDetails): BuyerGigDetails {
   if ("_id" in payload) return payload;

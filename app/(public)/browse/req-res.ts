@@ -55,6 +55,8 @@ export async function sendAIMessage(payload: {
     },
   ];
 
+  console.log("AI message sent, response:", messages);
+
   return messages;
 }
 
@@ -87,7 +89,7 @@ export async function getAIChatHistory(userId1: string, userId2: string): Promis
 
   messages.forEach((msg) => {
     // User message
-    const role = msg.to === 'ai-bot' ? 'assistant' : 'user';
+    const role = msg.to === 'ai-bot' ? 'user' : 'assistant';
     flattened.push({
       _id: msg._id,
       from: msg.from,
@@ -96,18 +98,6 @@ export async function getAIChatHistory(userId1: string, userId2: string): Promis
       content: msg.content,
       createdAt: msg.createdAt,
     });
-
-    // AI reply (if exists)
-    /*if (msg.to == 'ai-bot') {
-      flattened.push({
-        _id: `${msg._id}-reply`,
-        from: msg.to,
-        to: msg.from,
-        role: "assistant",
-        content: msg.content,
-        createdAt: msg.createdAt,
-      });
-    }*/
   });
 
   return flattened.sort(

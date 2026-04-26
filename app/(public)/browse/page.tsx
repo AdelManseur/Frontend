@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { getGigCategories, getSimpleGigs, sendAIMessage, getAIChatHistory } from "./req-res";
 import { getMe } from "../req-res";
 import Link from "next/link";
@@ -14,9 +14,7 @@ const formatAIText = (text: string) => {
 
 const parseTagsFromAIResponse = (text: string): string[] | null => {
   try {
-    console.log("Parsing AI response for tags:", text);
     const parsed = JSON.parse(text);
-    console.log("Parsed AI response:", parsed);
 
     if (Array.isArray(parsed)) {
       return parsed.map(String).filter(Boolean);
@@ -150,7 +148,7 @@ export default function BrowsePage() {
     );
   };
 
-  const onSendAIMessage = async (e: React.FormEvent) => {
+  const onSendAIMessage = async (e: FormEvent) => {
     e.preventDefault();
     const content = aiDraft.trim();
     if (!content || aiSending || !myUserId || !aiPartner) return;
@@ -349,6 +347,7 @@ export default function BrowsePage() {
               <p className={styles.empty}>Start chatting with AI...</p>
             ) : (
               aiMessages.map((msg) => {
+                console.log("Rendering AI message:", msg);
                 const isUser = msg.role === "user";
                 const isAssistant = msg.role === "assistant";
 

@@ -106,11 +106,11 @@
 }
 
 .rowUser {
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .rowAssistant {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .bubble {

@@ -1,0 +1,39 @@
+/* ...existing code... */
+
+.error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.input {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.sendBtn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #4f46e5;
+  color: #fff;
+  cursor: pointer;
+}
+
+.sendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ...existing code... */

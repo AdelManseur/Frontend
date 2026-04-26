@@ -2,22 +2,11 @@ import type { GetOrdersResponse, OrdersListPayload, OrdersQuery } from "./interf
 
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
-function buildApiUrl(path: string): string {
-  const base = RAW_BASE.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-
-  if (base.endsWith("/api") && p.startsWith("/api/")) {
-    return `${base}${p.slice(4)}`;
-  }
-
-  return `${base}${p}`;
-}
-
 export async function getOrdersList(
   token: string,
   query: OrdersQuery = {}
 ): Promise<OrdersListPayload> {
-  //if (!token) throw new Error("Missing admin token.");
+  if (!token) throw new Error("Missing admin token.");
 
   const params = new URLSearchParams();
   if (query.status?.trim()) params.set("status", query.status.trim());
@@ -41,6 +30,7 @@ export async function getOrdersList(
   }
 
   const orders = json?.orders ?? json?.data?.orders ?? [];
+  console.log("Fetched orders:", orders);
   const total = json?.total ?? json?.data?.total ?? orders.length;
   const page = json?.page ?? json?.data?.page ?? query.page ?? 1;
   const limit = json?.limit ?? json?.data?.limit ?? query.limit ?? 20;

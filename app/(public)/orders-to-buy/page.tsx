@@ -143,85 +143,100 @@ export default function BuyerOrdersPage() {
       ) : (
         <div className="mt-8 space-y-5">
           {orders.map((order) => (
-            <Link
-              key={order._id}
-              href={`/orders-to-buy/${order._id}`}
-              className="block rounded-2xl border border-white/10 bg-[#0b1220] p-5 shadow-sm transition hover:border-indigo-400/40 hover:bg-[#111a2d]"
-            >
-              <div className="flex flex-col gap-5 md:flex-row">
-                <div className="h-40 w-full overflow-hidden rounded-xl bg-white/5 md:w-64">
-                  {order.gig.images?.[0] ? (
-                    <img
-                      src={order.gig.images[0]}
-                      alt={order.gig.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-sm text-gray-500">
-                      No image
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">
-                        Order #{order._id.slice(-8)}
-                      </p>
-                      <h2 className="mt-1 text-xl font-semibold text-white">{order.gig.title}</h2>
-                      <p className="mt-1 text-sm text-gray-400">{order.gig.category}</p>
-                    </div>
-
-                    <span
-                      className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusClasses(order.status)}`}
-                    >
-                      {order.status.replace("_", " ")}
-                    </span>
+            <div key={order._id} className="space-y-2">
+              <Link
+                href={`/orders-to-buy/${order._id}`}
+                className="block rounded-2xl border border-white/10 bg-[#0b1220] p-5 shadow-sm transition hover:border-indigo-400/40 hover:bg-[#111a2d]"
+              >
+                <div className="flex flex-col gap-5 md:flex-row">
+                  <div className="h-40 w-full overflow-hidden rounded-xl bg-white/5 md:w-64">
+                    {order.gig.images?.[0] ? (
+                      <img
+                        src={order.gig.images[0]}
+                        alt={order.gig.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center text-sm text-gray-500">
+                        No image
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                      <p className="text-gray-400">Seller</p>
-                      <div className="mt-2 flex items-center gap-3">
-                        {order.seller.pfp ? (
-                          <img
-                            src={order.seller.pfp}
-                            alt={order.seller.name}
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-xs text-gray-300">
-                            {order.seller.name?.charAt(0) || "?"}
-                          </div>
-                        )}
-                        <p className="text-white">{order.seller.name}</p>
+                  <div className="flex-1">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">
+                          Order #{order._id.slice(-8)}
+                        </p>
+                        <h2 className="mt-1 text-xl font-semibold text-white">{order.gig.title}</h2>
+                        <p className="mt-1 text-sm text-gray-400">{order.gig.category}</p>
+                      </div>
+
+                      <span
+                        className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusClasses(order.status)}`}
+                      >
+                        {order.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <p className="text-gray-400">Seller</p>
+                        <div className="mt-2 flex items-center gap-3">
+                          {order.seller.pfp ? (
+                            <img
+                              src={order.seller.pfp}
+                              alt={order.seller.name}
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-xs text-gray-300">
+                              {order.seller.name?.charAt(0) || "?"}
+                            </div>
+                          )}
+                          <p className="text-white">{order.seller.name}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-400">Order Price</p>
+                        <p className="mt-2 text-white">${order.price}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-400">Expected Delivery</p>
+                        <p className="mt-2 text-white">{formatDate(order.expectedDelivery)}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-400">Ordered At</p>
+                        <p className="mt-2 text-white">{formatDate(order.createdAt)}</p>
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-gray-400">Order Price</p>
-                      <p className="mt-2 text-white">${order.price}</p>
+                    <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
+                      <p className="text-sm text-gray-400">Gig Price Snapshot</p>
+                      <p className="mt-1 text-white">${order.gig.price}</p>
                     </div>
-
-                    <div>
-                      <p className="text-gray-400">Expected Delivery</p>
-                      <p className="mt-2 text-white">{formatDate(order.expectedDelivery)}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-400">Ordered At</p>
-                      <p className="mt-2 text-white">{formatDate(order.createdAt)}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-sm text-gray-400">Gig Price Snapshot</p>
-                    <p className="mt-1 text-white">${order.gig.price}</p>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+
+              {order.reported && (
+                <div className="flex items-center gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  <span className="rounded bg-red-500/30 px-2 py-0.5 text-xs font-semibold tracking-wide text-red-100">
+                    RED FLAG
+                  </span>
+                  <Link
+                    href={`/orders-to-buy/report/${order.reportId ?? order._id}`}
+                    className="font-medium text-red-300 underline hover:text-red-200"
+                  >
+                    Viw your report
+                  </Link>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
