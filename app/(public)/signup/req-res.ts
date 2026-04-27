@@ -1,14 +1,16 @@
 import type { SignupRequest, SignupSuccessResponse, ApiErrorResponse } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 export async function signupUser(payload: SignupRequest): Promise<SignupSuccessResponse> {
+  console.log("Signing up user with payload:", payload);
   const formData = new FormData();
   formData.append("metadata", JSON.stringify(payload.metadata));
 
   if (payload.pfp) formData.append("pfp", payload.pfp);
   if (payload.folder) formData.append("folder", payload.folder);
 
+  console.log("url is", `${API_BASE_URL}/api/users/signin`);
   const response = await fetch(`${API_BASE_URL}/api/users/signin`, {
     method: "POST",
     credentials: "include",

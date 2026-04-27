@@ -57,7 +57,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         { label: "Control Users", href: "/control-users" },
         { label: "Control Orders", href: "/control-orders" },
         { label: "Reports", href: "/reports" },
-        { label: "Chat", href: "/chat" },
+        { label: "Fraud Cases", href: "/fraud-cases" },
+        { label: "Chat", href: "/admin-chats" },
       ];
     }
 
@@ -65,7 +66,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       { label: "Control Users", href: "/control-users" },
       { label: "Control Orders", href: "/control-orders" },
       { label: "Reports", href: "/reports" },
-      { label: "Chat", href: "/chat" },
+      { label: "Fraud Cases", href: "/fraud-cases" },
+      { label: "Chat", href: "/admin-chats" },
     ];
   }, [role]);
 

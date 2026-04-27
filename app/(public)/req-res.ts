@@ -3,6 +3,7 @@ import type { MeResponse } from "./interfaces";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 export async function getMe(): Promise<MeResponse> {
+  console.log("Fetching current user info from API...");
   const response = await fetch(`${API_BASE_URL}/api/users/me`, {
     method: "GET",
     credentials: "include",
@@ -11,6 +12,8 @@ export async function getMe(): Promise<MeResponse> {
   const raw = await response.text();
   const isJson = (response.headers.get("content-type") || "").includes("application/json");
   const data = isJson && raw ? JSON.parse(raw) : null;
+
+  console.log("Received response for getMe:", { status: response.status, data });
 
   if (!response.ok) {
     return {
