@@ -16,6 +16,23 @@ async function parseJson<T>(res: Response): Promise<T | null> {
   }
 }
 
+type UserDetailsApiShape = {
+  user?: {
+    userId?: string;
+    _id?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    pfp?: string;
+  };
+  userId?: string;
+  _id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  pfp?: string;
+};
+
 function getConvId(raw: ConversationRaw): string {
   if (typeof raw === "string") return raw;
   return String(raw.convId ?? raw._id ?? raw.id ?? "");
@@ -29,15 +46,23 @@ function getOtherUserId(raw: ConversationRaw, sellerId: string): string {
 }
 
 export async function getSimpleUserDetails(userId: string): Promise<SimpleUserDetails> {
-  const url = `${API_BASE}/users/get-details?userId=${encodeURIComponent(userId)}`;
+  const singularUrl = `${API_BASE}/user/get-details?userId=${encodeURIComponent(userId)}`;
+  const pluralUrl = `${API_BASE}/users/get-details?userId=${encodeURIComponent(userId)}`;
 
-  const res = await fetch(url, {
+  let res = await fetch(singularUrl, {
     method: "GET",
     credentials: "include",
   });
 
-  const data = await parseJson<any>(res);
-  console.log("Fetched user details:", { url, resStatus: res.status, data });
+  if (!res.ok) {
+    res = await fetch(pluralUrl, {
+      method: "GET",
+      credentials: "include",
+    });
+  }
+
+  const data = await parseJson<UserDetailsApiShape>(res);
+  console.log("Fetched user details:", { singularUrl, pluralUrl, resStatus: res.status, data });
 
   if (!res.ok) {
     throw new Error(`Failed to get user details (${res.status})`);
@@ -54,7 +79,6 @@ export async function getSimpleUserDetails(userId: string): Promise<SimpleUserDe
     email: src.email ? String(src.email) : undefined,
     phone: src.phone ? String(src.phone) : undefined,
     pfp: src.pfp ? String(src.pfp) : undefined,
-    role: src.role ? String(src.role) : undefined,
   };
 }
 
@@ -83,7 +107,7 @@ export async function getSellerConversations(userId: string): Promise<SellerConv
 
         const otherUserId = getOtherUserId(conversation, userId);
         if (!otherUserId) return null;
-        const otherUser = await getSimpleUserDetails(otherUserId as string);
+        const otherUser = await getSimpleUserDetails(otherUserId);
 
         return {
             convId,

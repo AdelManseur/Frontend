@@ -1,8 +1,9 @@
 import type { LoginRequest, LoginSuccessResponse, ApiErrorResponse } from "./interfaces";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 export async function loginUser(payload: LoginRequest): Promise<LoginSuccessResponse> {
+  console.log("Attempting to log in user with email:", payload.email);
   const response = await fetch(`${API_BASE_URL}/api/users/login`, {
     method: "POST",
     headers: {

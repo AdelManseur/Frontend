@@ -55,7 +55,15 @@ export default function ChatsModifiedLayout({ children }: { children: React.Reac
                     )}
                   </div>
                   <div className={styles.info}>
-                    <p className={styles.name}>{item.otherUser.name || "Unknown buyer"}</p>
+                    <p className={styles.name}>
+                      {item.otherUser.name || "Unknown buyer"}
+                      {item.otherUser.role === "super-admin" && (
+                        <span className={`${styles.badge} ${styles.badgeSuperAdmin}`}>Super Admin</span>
+                      )}
+                      {item.otherUser.role === "admin" && (
+                        <span className={`${styles.badge} ${styles.badgeAdmin}`}>Admin</span>
+                      )}
+                    </p>
                     <p className={styles.sub}>{item.otherUser._id}</p>
                   </div>
                 </Link>

@@ -22,7 +22,12 @@ export async function getGigDetails(gigId: string): Promise<BuyerGigDetails> {
   });
 
   const data = await parseJson<GigDetailsResponse | BuyerGigDetails>(res);
-  if (!res.ok || !data) throw new Error((data as any)?.message || `Failed to load gig (${res.status})`);
+  const errorMessage =
+    data && "message" in data && typeof data.message === "string"
+      ? data.message
+      : `Failed to load gig (${res.status})`;
+
+  if (!res.ok || !data) throw new Error(errorMessage);
   return pickGig(data);
 }
 
@@ -36,6 +41,15 @@ export async function createOrder(gigId: string): Promise<ApiMessageResponse> {
 
   const data = await parseJson<ApiMessageResponse>(res);
   if (!res.ok) throw new Error(data?.message || `Failed to create order (${res.status})`);
+
+  if (data?.suspiciousPatterns?.length) {
+    return {
+      ...data,
+      message: data.message || "Suspicious patterns detected",
+      suspiciousPatterns: data.suspiciousPatterns,
+    };
+  }
+
   return data ?? { message: "Order created" };
 }
 
@@ -88,7 +102,7 @@ export async function createSimpleOrder(payload: CreateSimpleOrderPayload): Prom
   });
 
   const raw = await res.text();
-  let data: CreateSimpleOrderResponse | { message?: string } | null = null;
+  let data: CreateSimpleOrderResponse | { message?: string; suspiciousPatterns?: string[] } | null = null;
 
   try {
     data = raw ? JSON.parse(raw) : null;
@@ -108,7 +122,14 @@ export async function createSimpleOrder(payload: CreateSimpleOrderPayload): Prom
     );
   }
 
-  return data as CreateSimpleOrderResponse;
+  if (data && "suspiciousPatterns" in data && Array.isArray(data.suspiciousPatterns) && data.suspiciousPatterns.length > 0) {
+    return {
+      message: data.message || "Suspicious patterns detected",
+      suspiciousPatterns: data.suspiciousPatterns,
+    };
+  }
+
+  return (data ?? { message: "Order created" }) as CreateSimpleOrderResponse;
 }
 
 type CreateSimpleOrderMessagePayload = {

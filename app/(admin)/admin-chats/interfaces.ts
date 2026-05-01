@@ -11,7 +11,6 @@ export interface SimpleUserDetails {
   email?: string;
   phone?: string;
   pfp?: string;
-  role?: string;
 }
 
 export type ConversationRaw =

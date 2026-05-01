@@ -10,5 +10,8 @@
 .avatar { width: 34px; height: 34px; border-radius: 999px; overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.12); }
 .avatarImg { width: 100%; height: 100%; object-fit: cover; }
 .info { min-width: 0; }
-.name { color: #fff; font-size: 14px; font-weight: 600; }
+.name { color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .sub { color: #94a3b8; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.badgeSuperAdmin { background: #8b5cf6; color: #fff; }
+.badgeAdmin { background: #06b6d4; color: #fff; }

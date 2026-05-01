@@ -33,6 +33,7 @@ export interface ApiMessageResponse {
   message: string;
   conversationId?: string;
   chatId?: string;
+  suspiciousPatterns?: string[];
 }
 
 export interface SendMessagePayload {
@@ -80,7 +81,7 @@ export interface CreateSimpleOrderPayload {
 
 export interface CreateSimpleOrderResponse {
   message: string;
-  order: {
+  order?: {
     _id: string;
     status: string;
     payment?: { amount: number; currency: string; status: string };
@@ -92,4 +93,5 @@ export interface CreateSimpleOrderResponse {
     };
     [key: string]: unknown;
   };
+  suspiciousPatterns?: string[];
 }
