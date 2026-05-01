@@ -202,7 +202,7 @@ export default function BrowsePage() {
             <label htmlFor="browse-search" className="mb-2 block text-sm text-gray-400">
               Search
             </label>
-            <div className="flex items-center border-b border-white/10 bg-white/[0.03] px-0 py-2">
+            <div className="flex items-center border-b border-white/10 bg-white/3 px-0 py-2">
               <input
                 id="browse-search"
                 type="text"
@@ -214,7 +214,7 @@ export default function BrowsePage() {
             </div>
           </div>
 
-          <div className="min-w-[220px]">
+          <div className="min-w-55">
             <label htmlFor="category-filter" className="mb-2 block text-sm text-gray-400">
               Category
             </label>
@@ -275,7 +275,7 @@ export default function BrowsePage() {
       <div className="mt-2 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
         {isLoading &&
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="min-h-[260px] animate-pulse rounded-xl border border-white/10 bg-white/5" />
+            <div key={i} className="min-h-65 animate-pulse rounded-xl border border-white/10 bg-white/5" />
           ))}
 
         {!isLoading && filteredGigs.length === 0 && (
@@ -291,7 +291,7 @@ export default function BrowsePage() {
             return (
               <Link key={gig._id} href={`/browse/${gig._id}`} className="block">
                 <article className="overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-indigo-400/40 hover:bg-white/[0.07]">
-                  <div className="h-[170px] w-full bg-black/20">
+                  <div className="h-42.5 w-full bg-black/20">
                     <img src={image} alt={gig.title} className="h-full w-full object-cover" />
                   </div>
 

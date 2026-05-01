@@ -1,0 +1,23 @@
+
+> frontend@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.7s
+  Running TypeScript ...
+Failed to compile.
+
+./app/(admin)/add-admins/interfaces.ts:29:16
+Type error: Import declaration conflicts with local declaration of 'CreateAdminPayload'.
+
+[0m [90m 27 |[39m     permissions[33m:[39m [33mAdminPermissions[39m[33m;[39m
+ [90m 28 |[39m   }[33m;[39m
+[31m[1m>[22m[39m[90m 29 |[39m }[36mimport[39m type { [33mCreateAdminPayload[39m[33m,[39m [33mCreateAdminResponse[39m } [36mfrom[39m [32m"./interfaces"[39m[33m;[39m
+ [90m    |[39m                [31m[1m^[22m[39m
+ [90m 30 |[39m
+ [90m 31 |[39m [36mconst[39m [33mRAW_BASE[39m [33m=[39m process[33m.[39menv[33m.[39m[33mNEXT_PUBLIC_API_URL[39m [33m||[39m [32m"http://localhost:3000/api"[39m[33m;[39m
+ [90m 32 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

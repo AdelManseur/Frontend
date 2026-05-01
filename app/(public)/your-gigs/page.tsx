@@ -50,7 +50,7 @@ export default function YourGigsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid min-h-[220px] place-items-center text-gray-400">Loading gigs...</div>
+        <div className="grid min-h-55 place-items-center text-gray-400">Loading gigs...</div>
       ) : error ? (
         <p className="mt-6 text-sm text-red-400">{error}</p>
       ) : gigs.length === 0 ? (
@@ -71,7 +71,7 @@ export default function YourGigsPage() {
                 className="block"
               >
                 <article className="overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-indigo-400/40 hover:bg-white/[0.07]">
-                  <div className="h-[180px] w-full bg-black/20">
+                  <div className="h-45 w-full bg-black/20">
                     <img
                       src={image}
                       alt={gig.title}
