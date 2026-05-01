@@ -1,33 +1,77 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Search, ChevronRight, Star, Check, Play, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, ChevronRight, Star, Check, Play, Menu, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 
-// Subcomponents for cleaner Next.js-like architecture
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Gig {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  images: string[];
+  price: {
+    basic: { price: number };
+    standard?: { price: number };
+    premium?: { price: number };
+  };
+  seller: {
+    _id: string;
+    name: string;
+    pfp?: string;
+    rating?: number;
+  };
+  rating?: number;
+  totalReviews?: number;
+}
+
+interface GigsResponse {
+  gigs: Gig[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function fetchGigs(params: Record<string, string | number>): Promise<GigsResponse> {
+  const qs = new URLSearchParams(
+    Object.entries(params)
+      .filter(([, v]) => v !== '' && v !== undefined)
+      .map(([k, v]) => [k, String(v)])
+  ).toString();
+
+  const res = await fetch(`/api/gigs${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error('Failed to fetch gigs');
+  return res.json();
+}
+
+// ─── Subcomponents ────────────────────────────────────────────────────────────
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <>
-      <motion.nav 
+      <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${
-          scrolled 
-            ? 'bg-white/80 backdrop-blur-2xl border-neutral-200/50 py-4 shadow-sm' 
+          scrolled
+            ? 'bg-white/80 backdrop-blur-2xl border-neutral-200/50 py-4 shadow-sm'
             : 'bg-transparent border-transparent py-6'
         }`}
       >
@@ -38,13 +82,11 @@ const Navbar = () => {
             </Link>
             <div className="hidden md:flex items-center gap-8">
               {['Explore', 'Find Work', 'Become a Seller', 'How it Works'].map((item) => (
-                <a 
-                  key={item} 
-                  href="#" 
+                <a
+                  key={item}
+                  href="#"
                   className={`text-sm font-medium transition-colors ${
-                    scrolled 
-                      ? 'text-neutral-500 hover:text-neutral-900' 
-                      : 'text-white/70 hover:text-white'
+                    scrolled ? 'text-neutral-500 hover:text-neutral-900' : 'text-white/70 hover:text-white'
                   }`}
                 >
                   {item}
@@ -53,35 +95,31 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className={`text-sm font-medium transition-colors ${
                 scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/80 hover:text-white'
               }`}
             >
               Sign In
             </Link>
-            <Link 
-              href="/signup" 
+            <Link
+              href="/signup"
               className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
-                scrolled 
-                  ? 'bg-neutral-900 text-white hover:bg-neutral-800' 
+                scrolled
+                  ? 'bg-neutral-900 text-white hover:bg-neutral-800'
                   : 'bg-white text-neutral-900 hover:bg-neutral-100'
               }`}
             >
               Join JobMe
             </Link>
           </div>
-          <button 
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(true)}
-          >
+          <button className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
             <Menu className={`w-6 h-6 ${scrolled ? 'text-neutral-900' : 'text-white'}`} />
           </button>
         </div>
       </motion.nav>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -136,41 +174,242 @@ const Footer = () => (
           </div>
         ))}
       </div>
-
       <div className="pt-8 border-t border-neutral-200 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
           <span className="text-2xl font-semibold tracking-tighter text-neutral-900">JobMe.</span>
           <span className="text-sm font-medium text-neutral-400">© 2026 JobMe Inc.</span>
         </div>
         <div className="flex items-center gap-8">
-          <a href="#" className="text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors">Terms</a>
-          <a href="#" className="text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors">Privacy</a>
-          <a href="#" className="text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors">Cookies</a>
+          {['Terms', 'Privacy', 'Cookies'].map((l) => (
+            <a key={l} href="#" className="text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors">{l}</a>
+          ))}
         </div>
       </div>
     </div>
   </footer>
 );
 
+// ─── Gig Card ─────────────────────────────────────────────────────────────────
+const GigCard = ({ gig, variants }: { gig: Gig; variants: object }) => {
+  const image = gig.images?.[0];
+  const price = gig.price?.basic?.price;
+  const sellerName = gig.seller?.name ?? 'Seller';
+  const sellerAvatar = gig.seller?.pfp;
+
+  return (
+    <motion.a
+      variants={variants}
+      href={`/gigs/${gig._id}`}
+      className="group flex flex-col gap-5 p-4 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300"
+    >
+      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 relative">
+        {image ? (
+          <Image
+            src={image}
+            alt={gig.title}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-sm font-medium">
+            No image
+          </div>
+        )}
+      </div>
+      <div className="px-1">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 relative">
+            {sellerAvatar ? (
+              <Image src={sellerAvatar} alt={sellerName} fill className="object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-neutral-500">
+                {sellerName[0]?.toUpperCase()}
+              </div>
+            )}
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-neutral-900">{sellerName}</span>
+        </div>
+        <h3 className="text-lg font-medium tracking-tight text-neutral-800 mb-3 leading-snug group-hover:text-neutral-900 transition-colors line-clamp-2">
+          {gig.title}
+        </h3>
+        <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100">
+          <div className="flex items-center gap-1.5">
+            <Star className="w-4 h-4 fill-neutral-900 text-neutral-900" />
+            <span className="text-sm font-bold tracking-tight text-neutral-900">
+              {gig.rating?.toFixed(1) ?? '—'}
+            </span>
+            {gig.totalReviews != null && (
+              <span className="text-sm text-neutral-400 font-medium">({gig.totalReviews})</span>
+            )}
+          </div>
+          {price != null && (
+            <span className="text-lg font-bold tracking-tight text-neutral-900">${price}</span>
+          )}
+        </div>
+      </div>
+    </motion.a>
+  );
+};
+
+// ─── Search Results Section ───────────────────────────────────────────────────
+const SearchResults = ({
+  query,
+  gigs,
+  loading,
+  error,
+  pagination,
+  onLoadMore,
+  onClear,
+  variants,
+  staggerContainer,
+}: {
+  query: string;
+  gigs: Gig[];
+  loading: boolean;
+  error: string | null;
+  pagination: GigsResponse['pagination'] | null;
+  onLoadMore: () => void;
+  onClear: () => void;
+  variants: object;
+  staggerContainer: object;
+}) => (
+  <section className="py-20 px-6 max-w-7xl mx-auto">
+    <div className="flex items-end justify-between mb-10">
+      <div>
+        <h2 className="text-3xl md:text-4xl font-semibold tracking-tighter text-neutral-900">
+          Results for <span className="text-neutral-400">"{query}"</span>
+        </h2>
+        {pagination && !loading && (
+          <p className="text-neutral-500 font-medium mt-2">
+            {pagination.totalCount} gig{pagination.totalCount !== 1 ? 's' : ''} found
+          </p>
+        )}
+      </div>
+      <button
+        onClick={onClear}
+        className="text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors flex items-center gap-1"
+      >
+        <X className="w-4 h-4" /> Clear
+      </button>
+    </div>
+
+    {loading && gigs.length === 0 && (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 text-neutral-400 animate-spin" />
+      </div>
+    )}
+
+    {error && (
+      <div className="py-16 text-center text-neutral-500">{error}</div>
+    )}
+
+    {!loading && !error && gigs.length === 0 && (
+      <div className="py-24 text-center">
+        <p className="text-2xl font-semibold tracking-tight text-neutral-900 mb-3">No gigs found</p>
+        <p className="text-neutral-500 font-light">Try a different search term or browse categories below.</p>
+      </div>
+    )}
+
+    {gigs.length > 0 && (
+      <>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        >
+          {gigs.map((gig) => (
+            <GigCard key={gig._id} gig={gig} variants={variants} />
+          ))}
+        </motion.div>
+
+        {pagination?.hasNext && (
+          <div className="mt-16 flex justify-center">
+            <button
+              onClick={onLoadMore}
+              disabled={loading}
+              className="px-8 py-4 rounded-full border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Load more
+            </button>
+          </div>
+        )}
+      </>
+    )}
+  </section>
+);
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [gigs, setGigs] = useState<Gig[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<GigsResponse['pagination'] | null>(null);
+
+  const TRENDING = ['Website Development', 'Logo Design', 'Video Editing'];
+
+  const runSearch = useCallback(async (query: string, pageNum = 1, append = false) => {
+    if (!query.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchGigs({ search: query.trim(), page: pageNum, limit: 12 });
+      setGigs((prev) => (append ? [...prev, ...data.gigs] : data.gigs));
+      setPagination(data.pagination);
+      setPage(pageNum);
+    } catch (e) {
+      setError('Something went wrong fetching gigs. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+    setActiveSearch(searchQuery.trim());
+    setGigs([]);
+    runSearch(searchQuery.trim(), 1, false);
+    // Scroll down to results
+    setTimeout(() => {
+      document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleTrendingClick = (tag: string) => {
+    setSearchQuery(tag);
+    setActiveSearch(tag);
+    setGigs([]);
+    runSearch(tag, 1, false);
+    setTimeout(() => {
+      document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleLoadMore = () => {
+    runSearch(activeSearch, page + 1, true);
+  };
+
+  const handleClear = () => {
+    setActiveSearch('');
+    setSearchQuery('');
+    setGigs([]);
+    setPagination(null);
+    setError(null);
+  };
 
   const popularServices = [
-    { id: '1', name: 'Logo Design', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop', category: 'Graphics & Design' },
-    { id: '2', name: 'Website Development', image: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&h=400&fit=crop', category: 'Programming & Tech' },
-    { id: '3', name: 'Video Editing', image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=600&h=400&fit=crop', category: 'Video & Animation' },
-    { id: '4', name: 'Content Writing', image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&h=400&fit=crop', category: 'Writing & Translation' },
-    { id: '5', name: 'Mobile App Design', image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=400&fit=crop', category: 'Digital Design' },
-    { id: '6', name: 'SEO Services', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop', category: 'Digital Marketing' },
-    { id: '7', name: 'Voice Over', image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=600&h=400&fit=crop', category: 'Music & Audio' },
-    { id: '8', name: 'Social Media', image: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&h=400&fit=crop', category: 'Marketing' },
-  ];
-
-  const featuredGigs = [
-    { id: '1', seller: 'Sarah M.', title: 'I will design a modern minimal logo', rating: 4.9, reviews: 1240, price: 45, image: 'https://images.unsplash.com/photo-1611224885990-ab7363d1f2a9?w=500&h=350&fit=crop', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop' },
-    { id: '2', seller: 'James K.', title: 'I will build a responsive React website', rating: 5.0, reviews: 892, price: 150, image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500&h=350&fit=crop', avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=80&h=80&fit=crop' },
-    { id: '3', seller: 'Anna L.', title: 'I will edit your video professionally', rating: 4.8, reviews: 567, price: 75, image: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=500&h=350&fit=crop', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop' },
-    { id: '4', seller: 'Mike R.', title: 'I will write SEO blog articles for you', rating: 4.9, reviews: 2103, price: 30, image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=500&h=350&fit=crop', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop' },
+    { id: '1', name: 'Logo Design', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop', category: 'Graphics & Design', search: 'logo design' },
+    { id: '2', name: 'Website Development', image: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&h=400&fit=crop', category: 'Programming & Tech', search: 'website development' },
+    { id: '3', name: 'Video Editing', image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=600&h=400&fit=crop', category: 'Video & Animation', search: 'video editing' },
+    { id: '4', name: 'Content Writing', image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&h=400&fit=crop', category: 'Writing & Translation', search: 'content writing' },
+    { id: '5', name: 'Mobile App Design', image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=400&fit=crop', category: 'Digital Design', search: 'mobile app' },
+    { id: '6', name: 'SEO Services', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop', category: 'Digital Marketing', search: 'SEO' },
+    { id: '7', name: 'Voice Over', image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=600&h=400&fit=crop', category: 'Music & Audio', search: 'voice over' },
+    { id: '8', name: 'Social Media', image: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&h=400&fit=crop', category: 'Marketing', search: 'social media' },
   ];
 
   const trustedCompanies = ['Meta', 'Google', 'Netflix', 'P&G', 'PayPal'];
@@ -182,33 +421,24 @@ export default function HomePage() {
 
   const staggerContainer = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   return (
     <div className="min-h-screen bg-white selection:bg-neutral-900 selection:text-white font-sans">
       <Navbar />
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden pt-20">
         <div className="absolute inset-0 z-0 bg-neutral-900">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover opacity-60 mix-blend-overlay"
-          >
+          <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-60 mix-blend-overlay">
             <source src="https://res.cloudinary.com/dztptq6q1/video/upload/v1777254835/7252516-hd_1920_1080_25fps_zaxunm.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent opacity-80" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full mt-24">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
@@ -222,7 +452,7 @@ export default function HomePage() {
               Connect with top-tier professionals to bring your ideas to life. Fast, secure, and purely brilliant.
             </p>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -234,23 +464,32 @@ export default function HomePage() {
                 placeholder="What are you looking for?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="flex-1 px-4 py-4 text-lg outline-none bg-transparent placeholder:text-white/60 text-white group-focus-within:text-neutral-900 group-focus-within:placeholder:text-neutral-400 font-light w-full"
               />
-              <button className="hidden md:block px-8 py-4 bg-white text-neutral-900 rounded-full font-medium hover:bg-neutral-100 transition-all active:scale-95 shadow-sm">
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="hidden md:flex items-center gap-2 px-8 py-4 bg-white text-neutral-900 rounded-full font-medium hover:bg-neutral-100 transition-all active:scale-95 shadow-sm disabled:opacity-60"
+              >
+                {loading && activeSearch === searchQuery.trim() ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : null}
                 Search
               </button>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6, duration: 0.8 }}
               className="mt-10 flex flex-wrap items-center gap-3"
             >
               <span className="text-sm font-medium text-neutral-400">Trending:</span>
-              {['Website Development', 'Logo Design', 'Video Editing'].map((tag) => (
+              {TRENDING.map((tag) => (
                 <button
                   key={tag}
+                  onClick={() => handleTrendingClick(tag)}
                   className="px-4 py-1.5 text-sm font-medium text-neutral-300 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white hover:text-neutral-900 transition-all"
                 >
                   {tag}
@@ -261,10 +500,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trusted By Section */}
+      {/* Search Results — rendered when there's an active search */}
+      <AnimatePresence>
+        {activeSearch && (
+          <motion.div
+            id="search-results"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5 }}
+          >
+            <SearchResults
+              query={activeSearch}
+              gigs={gigs}
+              loading={loading}
+              error={error}
+              pagination={pagination}
+              onLoadMore={handleLoadMore}
+              onClear={handleClear}
+              variants={fadeUpVariant}
+              staggerContainer={staggerContainer}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Trusted By */}
       <div className="border-b border-neutral-100 bg-white py-12">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -272,8 +536,8 @@ export default function HomePage() {
           >
             <span className="text-sm font-semibold tracking-widest uppercase text-neutral-500">Trusted by modern teams</span>
             <div className="flex items-center gap-12 flex-wrap justify-center">
-              {trustedCompanies.map((company) => (
-                <span key={company} className="text-2xl font-bold tracking-tighter text-neutral-800">{company}</span>
+              {trustedCompanies.map((c) => (
+                <span key={c} className="text-2xl font-bold tracking-tighter text-neutral-800">{c}</span>
               ))}
             </div>
           </motion.div>
@@ -282,10 +546,10 @@ export default function HomePage() {
 
       {/* Popular Services */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: '-100px' }}
           variants={fadeUpVariant}
           className="flex items-end justify-between mb-16"
         >
@@ -295,19 +559,19 @@ export default function HomePage() {
           </a>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: '-100px' }}
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
         >
           {popularServices.map((service) => (
-            <motion.a
+            <motion.button
               variants={fadeUpVariant}
               key={service.id}
-              href="#"
-              className="group flex flex-col gap-4"
+              onClick={() => handleTrendingClick(service.search)}
+              className="group flex flex-col gap-4 text-left"
             >
               <div className="aspect-[4/3] md:aspect-square overflow-hidden rounded-2xl bg-neutral-100 relative">
                 <Image
@@ -322,24 +586,18 @@ export default function HomePage() {
                 <h3 className="text-xl font-semibold tracking-tight text-neutral-900 mb-1 group-hover:text-neutral-600 transition-colors">{service.name}</h3>
                 <p className="text-sm text-neutral-500 font-medium">{service.category}</p>
               </div>
-            </motion.a>
+            </motion.button>
           ))}
         </motion.div>
       </section>
 
-      {/* Value Proposition Banner */}
+      {/* Value Proposition */}
       <section className="py-32 px-6 bg-neutral-950 text-white selection:bg-white selection:text-neutral-900">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={staggerContainer}>
             <motion.p variants={fadeUpVariant} className="text-sm font-semibold tracking-widest uppercase text-neutral-500 mb-6">A whole world of talent</motion.p>
             <motion.h2 variants={fadeUpVariant} className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-white mb-10 leading-[1.05]">
-              Break down <br />
-              <span className="text-neutral-500 font-light">every barrier.</span>
+              Break down <br /><span className="text-neutral-500 font-light">every barrier.</span>
             </motion.h2>
             <motion.ul variants={staggerContainer} className="space-y-6">
               {[
@@ -362,7 +620,7 @@ export default function HomePage() {
             </motion.button>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
@@ -379,79 +637,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Gigs */}
-      <section className="py-32 px-6 max-w-7xl mx-auto bg-neutral-50/50 rounded-[3rem] my-12">
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariant}
-          className="flex items-end justify-between mb-16"
-        >
-          <div>
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tighter text-neutral-900 mb-4">Featured by JobMe.</h2>
-            <p className="text-xl text-neutral-500 font-light">Hand-picked professionals delivering premium quality.</p>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-        >
-          {featuredGigs.map((gig) => (
-            <motion.a
-              variants={fadeUpVariant}
-              key={gig.id}
-              href="#"
-              className="group flex flex-col gap-5 p-4 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300"
-            >
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 relative">
-                <Image
-                  src={gig.image}
-                  alt={gig.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-              <div className="px-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 relative">
-                    <Image src={gig.avatar} alt={gig.seller} fill className="object-cover" />
-                  </div>
-                  <span className="text-sm font-semibold tracking-tight text-neutral-900">{gig.seller}</span>
-                </div>
-                <h3 className="text-lg font-medium tracking-tight text-neutral-800 mb-3 leading-snug group-hover:text-neutral-900 transition-colors line-clamp-2">{gig.title}</h3>
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100">
-                  <div className="flex items-center gap-1.5">
-                    <Star className="w-4 h-4 fill-neutral-900 text-neutral-900" />
-                    <span className="text-sm font-bold tracking-tight text-neutral-900">{gig.rating}</span>
-                    <span className="text-sm text-neutral-400 font-medium">({gig.reviews})</span>
-                  </div>
-                  <span className="text-lg font-bold tracking-tight text-neutral-900">${gig.price}</span>
-                </div>
-              </div>
-            </motion.a>
-          ))}
-        </motion.div>
-      </section>
-
       {/* How It Works */}
       <section className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeUpVariant}
-            className="text-center mb-24"
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUpVariant} className="text-center mb-24">
             <h2 className="text-4xl md:text-5xl font-semibold tracking-tighter text-neutral-900">How it works.</h2>
           </motion.div>
-
-          <motion.div 
+          <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
@@ -477,7 +669,7 @@ export default function HomePage() {
 
       {/* Business CTA */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}

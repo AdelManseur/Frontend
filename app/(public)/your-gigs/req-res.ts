@@ -13,7 +13,7 @@ export async function getMyGigs(sellerId: string): Promise<SellerGig[]> {
   if (!sellerId.trim()) throw new Error("Missing sellerId.");
 
   const response = await fetch(
-    `${API_BASE_URL}/api/simple-gigs/seller/${encodeURIComponent(sellerId)}`,
+    `${API_BASE_URL}/api/gigs/seller/${encodeURIComponent(sellerId)}`,
     {
       method: "GET",
       credentials: "include",
