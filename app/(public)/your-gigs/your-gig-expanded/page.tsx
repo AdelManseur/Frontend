@@ -92,7 +92,13 @@ export default function YourGigExpandedPage() {
         </div>
         <div>
           <p className="text-sm text-gray-400">Price</p>
+<<<<<<< HEAD
           <p className="mt-2 text-sm font-semibold text-indigo-300">${gig.price}</p>
+=======
+          <p className="mt-2 text-sm font-semibold text-indigo-300">Gig price for standard plan: ${gig.price.standard.price}</p>
+          <p className="mt-1 text-sm font-semibold text-indigo-300">Gig price for premium plan: ${gig.price.premium.price}</p>
+          <p className="mt-1 text-sm font-semibold text-indigo-300">Gig price for basic plan: ${gig.price.basic.price}</p>
+>>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
         </div>
         <div>
           <p className="text-sm text-gray-400">Delivery</p>

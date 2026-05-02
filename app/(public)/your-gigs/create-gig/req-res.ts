@@ -25,7 +25,11 @@ export interface ApiErrorResponse {
 }
 
 // Update this to match your actual backend port (usually 5000 based on your setup)
+<<<<<<< HEAD
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"; 
+=======
+const API_BASE_URL = /*process.env.NEXT_PUBLIC_API_URL || */"http://localhost:3000";
+>>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
 const CREATE_GIG_PATH = "/api/gigs";
 
 export async function createGig(payload: CreateGigRequest): Promise<CreateGigSuccessResponse> {
@@ -44,6 +48,10 @@ export async function createGig(payload: CreateGigRequest): Promise<CreateGigSuc
       // We send payload.metadata directly so the backend receives 
       // req.body.title, req.body.price, etc., instead of req.body.metadata.title
       body: JSON.stringify(payload.metadata), 
+<<<<<<< HEAD
+=======
+      credentials: "include" // Include cookies for authentication if your backend uses them
+>>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
     });
 
     if (!response.ok) {

@@ -21,7 +21,11 @@ async function parseResponse<T>(response: Response): Promise<T | null> {
 }
 
 export async function getGigById(gigId: string): Promise<SellerGigExpanded> {
+<<<<<<< HEAD
   const response = await fetch(`${API_BASE_URL}/api/simple-gigs/${encodeURIComponent(gigId)}`, {
+=======
+  const response = await fetch(`${API_BASE_URL}/api/gigs/${encodeURIComponent(gigId)}`, {
+>>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
     method: "GET",
     credentials: "include",
   });

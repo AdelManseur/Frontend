@@ -21,7 +21,11 @@ export async function getMe(): Promise<MeResponse> {
       message: data?.message || `Not logged in (${response.status})`,
     };
   }
+<<<<<<< HEAD
 
+=======
+  console.log("User is logged in:", data.user);
+>>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
   return data as MeResponse;
 }
 
