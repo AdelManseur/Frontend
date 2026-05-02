@@ -48,10 +48,7 @@ async function fetchGigs(params: Record<string, string | number>): Promise<GigsR
   ).toString();
 
   const res = await fetch(`/api/gigs${qs ? `?${qs}` : ''}`);
-<<<<<<< HEAD
-=======
   console.log("Fetching gigs with params:", params, "URL:", res.url, "Status:", res.status);
->>>>>>> f98ac8379f1431d7ae15ce1e98457bd5a2f1c7c7
   if (!res.ok) throw new Error('Failed to fetch gigs');
   return res.json();
 }
