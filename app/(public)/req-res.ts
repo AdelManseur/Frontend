@@ -1,6 +1,5 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type { MeResponse } from "./interfaces";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 export async function getMe(): Promise<MeResponse> {
   console.log("Fetching current user info from API...");

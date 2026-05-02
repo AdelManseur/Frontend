@@ -1,6 +1,5 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type { LoginRequest, LoginSuccessResponse, ApiErrorResponse } from "./interfaces";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 export async function loginUser(payload: LoginRequest): Promise<LoginSuccessResponse> {
   console.log("Attempting to log in user with email:", payload.email);

@@ -1,6 +1,5 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type { ApiMessageResponse, BuyerGigDetails, CreateSimpleOrderPayload, CreateSimpleOrderResponse, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 function pickGig(payload: GigDetailsResponse | BuyerGigDetails): BuyerGigDetails {
   if ("_id" in payload) return payload;
@@ -16,7 +15,7 @@ async function parseJson<T>(res: Response): Promise<T | null> {
 }
 
 export async function getGigDetails(gigId: string): Promise<BuyerGigDetails> {
-  const res = await fetch(`${API_BASE_URL}/api/simple-gigs/${encodeURIComponent(gigId)}`, {
+  const res = await fetch(`${API_BASE_URL}/api/gigs/${encodeURIComponent(gigId)}`, {
     method: "GET",
     credentials: "include",
   });

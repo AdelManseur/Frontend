@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type {
   ChatMessage,
   GetMessagesResponse,
@@ -6,8 +7,7 @@ import type {
   ProjectOrderSummary,
 } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
-const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
+const API_BASE = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
 
 async function parseJson<T>(res: Response): Promise<T | null> {
   try {

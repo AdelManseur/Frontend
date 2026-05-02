@@ -1,5 +1,6 @@
 // filepath: c:\Users\Lenovo\Downloads\JobMe-main\Frontend\frontend\app\super-admin\req-res.ts
 
+import { API_BASE_URL } from "@/lib/api-config";
 import type {
   AnalyticsResponse,
   AnalyticsSummary,
@@ -7,10 +8,8 @@ import type {
   FraudChecksResponse,
 } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-
 function buildApiUrl(path: string): string {
-  const base = RAW_BASE.replace(/\/+$/, "");
+  const base = API_BASE_URL.replace(/\/+$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
 
   // Prevent /api/api duplication

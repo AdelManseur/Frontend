@@ -1,6 +1,5 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type { MeResponse } from "./interfaces";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 export async function getMe(): Promise<MeResponse> {
   const response = await fetch(`${API_BASE_URL}/api/admin/me`, {

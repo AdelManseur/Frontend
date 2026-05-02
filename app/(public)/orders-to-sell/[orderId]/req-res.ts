@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type {
   GetSellerOrderByIdResponse,
   SellerExpandedOrder,
@@ -5,8 +6,7 @@ import type {
   UpdateSellerOrderStatusResponse,
 } from "./interfaces";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
-const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
+const API_BASE = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
 
 export async function getSellerOrderById(orderId: string): Promise<SellerExpandedOrder> {
   const url = `${API_BASE}/simpleorders/${encodeURIComponent(orderId)}`;

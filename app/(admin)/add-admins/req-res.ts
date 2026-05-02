@@ -1,12 +1,11 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type { CreateAdminPayload, CreateAdminResponse } from "./interfaces";
-
-const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 export async function createAdmin(
   payload: CreateAdminPayload,
   token: string
 ): Promise<CreateAdminResponse> {
-  const res = await fetch(RAW_BASE + "/api/admin/create", {
+  const res = await fetch(API_BASE_URL + "/api/admin/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

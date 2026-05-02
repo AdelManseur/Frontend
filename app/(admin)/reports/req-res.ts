@@ -1,10 +1,9 @@
+import { API_BASE_URL } from "@/lib/api-config";
 import type {
   AdminReportsFilters,
   GetAllReportsResponse,
   GetSellerReportsResponse,
 } from "./interfaces";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
 
 function buildQuery(params: Record<string, string | number | undefined>) {
   const searchParams = new URLSearchParams();
