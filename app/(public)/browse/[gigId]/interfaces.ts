@@ -4,21 +4,43 @@ export interface GigSeller {
   pfp?: string;
 }
 
+export interface GigPackage {
+  price: number;
+  description: string;
+  deliveryTime: number;
+  revisions: number;
+  features: string[];
+}
+
+export type PackageType = "basic" | "standard" | "premium";
+
 export interface BuyerGigDetails {
   _id: string;
   title: string;
   description: string;
   category: string;
+  subcategory: string;
   tags: string[];
-  price: number;
-  deliveryTime: number;
-  revisions: number;
-  features: string[];
+  price: {
+    basic: GigPackage;
+    standard?: GigPackage;
+    premium?: GigPackage;
+  };
   images: string[];
-  seller: GigSeller;
+  seller: {
+    _id: string;
+    name: string;
+    pfp?: string;
+    rating?: number;
+    email?: string;
+    totalOrders?: number;
+    lastOnline?: string;
+  };
   rating: { average: number; count: number };
   totalOrders: number;
   isActive: boolean;
+  faqs: { question: string; answer: string }[];
+  requirements: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -31,6 +53,10 @@ export interface GigDetailsResponse {
 
 export interface ApiMessageResponse {
   message: string;
+  order?: {
+    _id: string;
+    status: string;
+  };
   conversationId?: string;
   chatId?: string;
   suspiciousPatterns?: string[];
@@ -54,44 +80,18 @@ export interface SendMessageResponse {
   };
 }
 
-export interface SimpleOrderRequirement {
-  question: string;
-  answer: string;
-}
-
-export interface CreateSimpleOrderPayload {
+export interface CreateOrderPayload {
   gigId: string;
-  requirements: SimpleOrderRequirement[];
-
-  // richer request fields
-  price: number;
-  currency: string; // default "USD" for now
-  deliveryTime: number;
-  revisions?: number;
-  status: "pending";
-  payment: {
-    amount: number;
-    currency: string;
-    status: "pending";
-  };
-  timeline: {
-    started: string;
-  };
+  package: PackageType;
+  requirements: { question: string; answer: string }[];
+  extras?: { name: string; price: number; description: string }[];
 }
 
-export interface CreateSimpleOrderResponse {
+export interface CreateOrderResponse {
   message: string;
   order?: {
     _id: string;
     status: string;
-    payment?: { amount: number; currency: string; status: string };
-    timeline?: {
-      started?: string;
-      delivered?: string;
-      completed?: string;
-      cancelled?: string;
-    };
     [key: string]: unknown;
   };
-  suspiciousPatterns?: string[];
 }

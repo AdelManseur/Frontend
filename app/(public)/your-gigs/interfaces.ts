@@ -1,17 +1,30 @@
+export interface GigPackage {
+  price: number;
+  description: string;
+  deliveryTime: number;
+  revisions: number;
+  features: string[];
+}
+
 export interface SellerGig {
   _id: string;
   title: string;
   description?: string;
   category: string;
-  price: number;
+  subcategory?: string;
+  price: {
+    basic: GigPackage;
+    standard?: GigPackage;
+    premium?: GigPackage;
+  };
   status?: "active" | "paused";
-  orders?: number;
-  rating?: number | { average?: number; count?: number };
-  deliveryTime?: number;
-  revisions?: number;
+  isActive?: boolean;
+  totalOrders?: number;
+  rating?: { average: number; count: number };
   tags?: string[];
-  features?: string[];
   images?: string[];
+  faqs?: { question: string; answer: string }[];
+  requirements?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

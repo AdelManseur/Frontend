@@ -1,5 +1,13 @@
 import { API_BASE_URL } from "@/lib/api-config";
-import type { ApiMessageResponse, BuyerGigDetails, CreateSimpleOrderPayload, CreateSimpleOrderResponse, GigDetailsResponse, SendMessagePayload, SendMessageResponse } from "./interfaces";
+import type { 
+  ApiMessageResponse, 
+  BuyerGigDetails, 
+  CreateOrderPayload, 
+  CreateOrderResponse, 
+  GigDetailsResponse, 
+  SendMessagePayload, 
+  SendMessageResponse 
+} from "./interfaces";
 
 function pickGig(payload: GigDetailsResponse | BuyerGigDetails): BuyerGigDetails {
   if ("_id" in payload) return payload;
@@ -30,26 +38,23 @@ export async function getGigDetails(gigId: string): Promise<BuyerGigDetails> {
   return pickGig(data);
 }
 
-export async function createOrder(gigId: string): Promise<ApiMessageResponse> {
+export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResponse> {
   const res = await fetch(`${API_BASE_URL}/api/orders`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ gigId }),
+    body: JSON.stringify(payload),
   });
 
-  const data = await parseJson<ApiMessageResponse>(res);
-  if (!res.ok) throw new Error(data?.message || `Failed to create order (${res.status})`);
+  const raw = await res.text();
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
+  const data = (isJson && raw ? JSON.parse(raw) : null) as CreateOrderResponse | null;
 
-  if (data?.suspiciousPatterns?.length) {
-    return {
-      ...data,
-      message: data.message || "Suspicious patterns detected",
-      suspiciousPatterns: data.suspiciousPatterns,
-    };
+  if (!res.ok) {
+    throw new Error(data?.message || `Failed to create order (${res.status})`);
   }
 
-  return data ?? { message: "Order created" };
+  return data ?? { message: "Order created successfully" };
 }
 
 export async function startChat(sellerId: string, gigId: string): Promise<ApiMessageResponse> {
@@ -84,88 +89,6 @@ export async function sendMessageToSeller(
   }
 
   return data ?? { message: "Message sent successfully" };
-}
-
-export async function createSimpleOrder(payload: CreateSimpleOrderPayload): Promise<CreateSimpleOrderResponse> {
-  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
-  const url = `${base}/simpleorders`; // important: use documented route
-
-  console.log("[createSimpleOrder] URL:", url);
-  console.log("[createSimpleOrder] Payload:", payload);
-
-  const res = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const raw = await res.text();
-  let data: CreateSimpleOrderResponse | { message?: string; suspiciousPatterns?: string[] } | null = null;
-
-  try {
-    data = raw ? JSON.parse(raw) : null;
-  } catch {
-    data = null;
-  }
-
-  console.log("[createSimpleOrder] Status:", res.status);
-  console.log("[createSimpleOrder] Raw response:", raw);
-  console.log("[createSimpleOrder] Parsed response:", data);
-
-  if (!res.ok) {
-    throw new Error(
-      data && "message" in data && data.message
-        ? data.message
-        : `Failed to create simple order (${res.status})`
-    );
-  }
-
-  if (data && "suspiciousPatterns" in data && Array.isArray(data.suspiciousPatterns) && data.suspiciousPatterns.length > 0) {
-    return {
-      message: data.message || "Suspicious patterns detected",
-      suspiciousPatterns: data.suspiciousPatterns,
-    };
-  }
-
-  return (data ?? { message: "Order created" }) as CreateSimpleOrderResponse;
-}
-
-type CreateSimpleOrderMessagePayload = {
-  simpleOrderId: string;
-  from?: string;
-  to?: string;
-  message: string;
-  attachments?: string[];
-  timestamp?: string;
-  read?: boolean;
-};
-
-export async function createSimpleOrderMessage(payload: CreateSimpleOrderMessagePayload): Promise<void> {
-  const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
-  const url = `${base}/simpleorders/${payload.simpleOrderId}/messages`;
-
-  const body = {
-    simpleOrderId: payload.simpleOrderId,
-    ...(payload.from ? { from: payload.from } : {}),
-    ...(payload.to ? { to: payload.to } : {}),
-    message: payload.message,
-    attachments: payload.attachments ?? [],
-    timestamp: payload.timestamp ?? new Date().toISOString(),
-    read: payload.read ?? false,
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(data?.message || data?.error || `Failed to add order message (${res.status})`);
-  }
 }
 
 type ConversationResponse = {

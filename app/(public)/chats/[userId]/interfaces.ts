@@ -20,6 +20,7 @@ export interface SimpleUserDetails {
 
 export interface ProjectOrderSummary {
   _id: string;
+  role?: string;
   gig: {
     title: string;
     images?: string[];
@@ -27,8 +28,8 @@ export interface ProjectOrderSummary {
     category?: string;
   };
   price?: number;
+  package?: string;
   status?: string;
-  expectedDelivery?: string;
   createdAt?: string;
 }
 

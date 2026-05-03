@@ -89,12 +89,15 @@ export default function YourGigsPage() {
                       <span className="rounded bg-white/10 px-2 py-1 text-gray-300">
                         {gig.category}
                       </span>
-                      <span className="font-semibold text-indigo-300">${gig.price}</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] uppercase text-gray-500">Starting at</span>
+                        <span className="font-semibold text-indigo-300">${gig.price.basic.price}</span>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                      <span>{gig.deliveryTime} day(s)</span>
-                      <span>{gig.revisions} revision(s)</span>
+                      <span>{gig.price.basic.deliveryTime} day(s)</span>
+                      <span>{gig.price.basic.revisions} revision(s)</span>
                     </div>
                   </div>
                 </article>

@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "@/lib/api-config";
 import type { 
   GetCategoriesResponse, 
-  GetSimpleGigsResponse, 
+  GetGigsResponse, 
   SendAIMessageResponse, 
   GetAIChatHistoryResponse,
   AIMessage 
@@ -104,17 +104,26 @@ export async function getAIChatHistory(userId1: string, userId2: string): Promis
   );
 }
 
-export async function getSimpleGigs(params: GetSimpleGigsParams = {}): Promise<GetSimpleGigsResponse> {
+export async function getGigs(params: {
+  search?: string;
+  category?: string;
+  subcategory?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  page?: number;
+  limit?: number;
+} = {}): Promise<GetGigsResponse> {
   const query = new URLSearchParams();
 
   if (params.search?.trim()) query.set("search", params.search.trim());
   if (params.category?.trim()) query.set("category", params.category.trim());
-  if (params.tags?.length) query.set("tags", params.tags.join(","));
-  console.log(query.toString());
+  if (params.subcategory?.trim()) query.set("subcategory", params.subcategory.trim());
+  if (params.minPrice) query.set("minPrice", String(params.minPrice));
+  if (params.maxPrice) query.set("maxPrice", String(params.maxPrice));
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 50));
 
-  const response = await fetch(`${API_BASE_URL}/api/simple-gigs?${query.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/api/gigs?${query.toString()}`, {
     method: "GET",
     credentials: "include",
   });
@@ -127,11 +136,11 @@ export async function getSimpleGigs(params: GetSimpleGigsParams = {}): Promise<G
     throw new Error(data?.message || `Failed to load gigs (${response.status})`);
   }
 
-  return data as GetSimpleGigsResponse;
+  return data as GetGigsResponse;
 }
 
 export async function getGigCategories(): Promise<string[]> {
-  const response = await fetch(`${API_BASE_URL}/api/simple-gigs/categories`, {
+  const response = await fetch(`${API_BASE_URL}/api/gigs/categories`, {
     method: "GET",
     credentials: "include",
   });

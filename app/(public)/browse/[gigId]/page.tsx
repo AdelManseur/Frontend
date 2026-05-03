@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { createSimpleOrder, createSimpleOrderMessage, getGigDetails, startChat } from "./req-res";
-import { ensureConversationExists } from "./req-res";
-import type { BuyerGigDetails } from "./interfaces";
+import { createOrder, getGigDetails, startChat, sendMessageToSeller, ensureConversationExists } from "./req-res";
+import type { BuyerGigDetails, PackageType } from "./interfaces";
 import { getMe } from "@/app/(public)/req-res";
-import { sendMessageToSeller } from "./req-res";
 
 export default function BuyerGigExpandedPage() {
   const router = useRouter();
@@ -17,22 +15,19 @@ export default function BuyerGigExpandedPage() {
   const [gig, setGig] = useState<BuyerGigDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOrdering, setIsOrdering] = useState(false);
-  const [isStartingChat, setIsStartingChat] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [selectedPackage, setSelectedPackage] = useState<PackageType>("basic");
   const [showContactBox, setShowContactBox] = useState(false);
   const [contactMessage, setContactMessage] = useState("");
   const [isSendingContact, setIsSendingContact] = useState(false);
   const [showFaqForm, setShowFaqForm] = useState(false);
   const [faqAnswers, setFaqAnswers] = useState<string[]>([]);
-  const [customSpecifications, setCustomSpecifications] = useState("");
-
   const [showOrderConfirm, setShowOrderConfirm] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         if (!gigId) throw new Error("Missing gig id.");
@@ -44,157 +39,68 @@ export default function BuyerGigExpandedPage() {
         if (mounted) setIsLoading(false);
       }
     })();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [gigId]);
+
+  const currentPackage = useMemo(() => {
+    if (!gig) return null;
+    return gig.price[selectedPackage] || gig.price.basic;
+  }, [gig, selectedPackage]);
+
+  const questions = useMemo(() => {
+    return gig?.requirements || [];
+  }, [gig]);
 
   const onOrder = async () => {
     if (!gig?._id) return;
-
     setError("");
     setSuccess("");
     setIsOrdering(true);
 
     try {
-      const faqRequirements = questions.map((q, i) => ({
+      const requirements = questions.map((q, i) => ({
         question: q,
         answer: (faqAnswers[i] ?? "").trim(),
       }));
 
-      const requirements = [
-        ...faqRequirements,
-        {
-          question: "Specific Confirmation",
-          answer: customSpecifications.trim() || "No additional specifications",
-        },
-      ];
-
-      const price = Number((gig as any).price ?? 0);
-      const deliveryTime = Number((gig as any).deliveryTime ?? 1);
-      const revisions = Number((gig as any).revisions ?? 0);
-      const currency = "USD";
-      const started = new Date().toISOString();
-
       const payload = {
         gigId: gig._id,
+        package: selectedPackage,
         requirements,
-        price,
-        currency,
-        deliveryTime,
-        revisions,
-        status: "pending" as const,
-        payment: {
-          amount: price,
-          currency,
-          status: "pending" as const,
-        },
-        timeline: {
-          started,
-        },
       };
 
-      const res = await createSimpleOrder(payload);
-
-      // Build full order message from FAQs + custom specs
-      const messageParts: string[] = [];
-      if (faqRequirements.length > 0) {
-        messageParts.push("FAQ Answers:");
-        faqRequirements.forEach((item, idx) => {
-          messageParts.push(`Q${idx + 1}: ${item.question}`);
-          messageParts.push(`A${idx + 1}: ${item.answer || "-"}`);
-        });
-      }
-      messageParts.push("Custom Specifications:");
-      messageParts.push(customSpecifications.trim() || "No additional specifications");
-      const composedMessage = messageParts.join("\n");
-
-      // REQUIRED: include from/to
-      if (res?.order?._id) {
-        const me = await getMe();
-        if (!me.logged) throw new Error("You must be logged in.");
-
-        const to = resolveSellerId(gig);
-        if (!to) throw new Error("Seller id not found for this gig.");
-
-        await createSimpleOrderMessage({
-          simpleOrderId: res.order._id,
-          from: me.user._id,
-          to,
-          message: composedMessage,
-          attachments: [],
-          read: false,
-        });
-      }
-
+      const res = await createOrder(payload);
       setSuccess(res.message || "Order created successfully");
       setShowOrderConfirm(false);
       setShowFaqForm(false);
-      setFaqAnswers(Array.from({ length: questions.length }, () => ""));
-      setCustomSpecifications("");
+      
+      // Optional: Redirect to buyer orders
+      setTimeout(() => router.push("/orders-to-buy"), 2000);
     } catch (e) {
-      console.error("[BuyerGigExpandedPage] createSimpleOrder error:", e);
       setError(e instanceof Error ? e.message : "Failed to create order.");
     } finally {
       setIsOrdering(false);
     }
   };
 
-  /*const onStartChat = async () => {
-    if (!gig) return;
-    setError("");
-    setSuccess("");
-    setIsStartingChat(true);
-    try {
-      const res = await startChat(gig.sellerId);
-      router.push(`/buyer/chats?chatId=${res.chatId}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start chat.");
-    } finally {
-      setIsStartingChat(false);
-    }
-  };*/
-
-  const resolveSellerId = (g: unknown): string => {
-    const gigAny = g as any;
-    if (typeof gigAny?.sellerId === "string") return gigAny.sellerId;
-    if (typeof gigAny?.seller?._id === "string") return gigAny.seller._id;
-    if (typeof gigAny?.ownerId === "string") return gigAny.ownerId;
-    if (typeof gigAny?.userId === "string") return gigAny.userId;
-    return "";
+  const resolveSellerId = (g: any): string => {
+    return g?.seller?._id || "";
   };
 
   const onSendContactMessage = async () => {
     if (!gig) return;
-
     const content = contactMessage.trim();
-    if (!content) {
-      setError("Please write a message first.");
-      return;
-    }
-
+    if (!content) { setError("Please write a message first."); return; }
     setError("");
     setSuccess("");
     setIsSendingContact(true);
-
     try {
       const me = await getMe();
       if (!me.logged) throw new Error("You must be logged in.");
-
       const sellerId = resolveSellerId(gig);
       if (!sellerId) throw new Error("Seller ID not found.");
-
-      // ensure conversation exists first
-      const conv_res = await ensureConversationExists(sellerId, me.user._id);
-      console.log("ensureConversationExists result:", conv_res);
-
-      const result = await sendMessageToSeller({
-        from: me.user._id,
-        to: sellerId,
-        content,
-      });
-
+      await ensureConversationExists(sellerId, me.user._id);
+      const result = await sendMessageToSeller({ from: me.user._id, to: sellerId, content });
       setSuccess(result.message || "Message sent.");
       setContactMessage("");
       setShowContactBox(false);
@@ -205,292 +111,209 @@ export default function BuyerGigExpandedPage() {
     }
   };
 
-  const ratingText = useMemo(() => {
-    if (!gig?.rating) return "0.0 (0)";
-    if (typeof gig.rating === "number") return `${gig.rating.toFixed(1)} (0)`;
-    const avg = typeof gig.rating.average === "number" ? gig.rating.average : 0;
-    const count = typeof gig.rating.count === "number" ? gig.rating.count : 0;
-    return `${avg.toFixed(1)} (${count})`;
-  }, [gig]);
-
-  const questions = useMemo(() => {
-    const raw = (gig as any)?.questions;
-    if (!Array.isArray(raw)) return [];
-    return raw.map((q) => String(q).trim()).filter(Boolean);
-  }, [gig]);
-
-  const hasGigQuestions = questions.length > 0;
-
-  useEffect(() => {
-    setFaqAnswers(Array.from({ length: questions.length }, () => ""));
-    setShowFaqForm(false);
-    setCustomSpecifications("");
-  }, [gig?._id, questions.length]);
-
-  const onFaqAnswerChange = (index: number, value: string) => {
-    setFaqAnswers((prev) => prev.map((a, i) => (i === index ? value : a)));
-  };
-
-  const onOrderClick = async () => {
-    // Always open the pre-order form first (FAQ + Custom Specifications)
-    setShowFaqForm(true);
-  };
-
-  const onOrderNowClick = () => {
-    if (hasGigQuestions) {
-      const hasEmpty = faqAnswers.some((a) => !a.trim());
-      if (hasEmpty) {
-        setError("Please answer all FAQ questions before ordering.");
-        return;
-      }
-    }
-
-    setShowOrderConfirm(true);
-  };
-
-  const onConfirmOrder = async () => {
-    const me = await getMe();
-    if (!me.logged) throw new Error("You must be logged in.");
-
-    const sellerId = resolveSellerId(gig);
-    if (!sellerId) throw new Error("Seller ID not found.");
-
-    // ensure conversation exists first
-    const conv_res = await ensureConversationExists(sellerId, me.user._id);
-    console.log("ensureConversationExists result:", conv_res);
-
-    setShowOrderConfirm(false);
-    await onOrder();
-  };
-
-  const isLoadingGig = isLoading;
-
-  if (isLoadingGig) {
-    return <div className="grid min-h-[220px] place-items-center text-gray-400">Loading gig...</div>;
-  }
-
-  if (!gig) {
-    return (
-      <div>
-        <Link
-          href="/browse"
-          className="mb-4 inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200"
-        >
-          <span>←</span>
-          <span>Back to Browse</span>
-        </Link>
-        <p className="text-sm text-red-400">{error || "Gig not found."}</p>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="grid min-h-[220px] place-items-center text-gray-400">Loading gig...</div>;
+  if (!gig) return <div><Link href="/browse" className="mb-4 inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200"><span>←</span><span>Back to Browse</span></Link><p className="text-sm text-red-400">{error || "Gig not found."}</p></div>;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <Link
-        href="/browse"
-        className="mb-4 inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200"
-      >
-        <span>←</span>
-        <span>Back to Browse</span>
-      </Link>
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="flex flex-col gap-8 lg:flex-row">
+        {/* Left Column: Gig Info */}
+        <div className="flex-1">
+          <Link href="/browse" className="mb-6 inline-flex items-center gap-2 text-sm text-indigo-300 hover:text-indigo-200">
+            <span>←</span><span>Back to Browse</span>
+          </Link>
 
-      <div className="border-b border-white/10 pb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Gig Details</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">{gig.title}</h1>
-        <p className="mt-3 text-sm leading-7 text-gray-300">{gig.description}</p>
-      </div>
-
-      <section className="border-b border-white/10 py-8">
-        <h2 className="text-lg font-semibold text-white">Images</h2>
-        {(gig.images ?? []).length ? (
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {gig.images.map((src, i) => (
-              <div key={`${src}-${i}`} className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                <img src={src} alt={`Gig image ${i + 1}`} className="h-56 w-full object-cover" />
+          <div className="border-b border-white/10 pb-8">
+            <h1 className="text-3xl font-bold text-white">{gig.title}</h1>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <img src={gig.seller.pfp || "https://placehold.co/100x100/111827/9ca3af?text=User"} alt={gig.seller.name} className="h-10 w-10 rounded-full object-cover" />
+                <span className="font-medium text-white">{gig.seller.name}</span>
               </div>
-            ))}
+              <div className="h-4 w-px bg-white/10" />
+              <div className="flex items-center gap-1 text-sm text-yellow-500">
+                ⭐ <span>{gig.rating.average.toFixed(1)}</span>
+                <span className="text-gray-400">({gig.rating.count})</span>
+              </div>
+            </div>
           </div>
-        ) : (
-          <p className="mt-3 text-sm text-gray-400">No images provided.</p>
-        )}
-      </section>
 
-      <section className="grid grid-cols-1 gap-6 border-b border-white/10 py-8 md:grid-cols-4">
-        <div>
-          <p className="text-sm text-gray-400">Category</p>
-          <p className="mt-2 text-sm text-white">{gig.category || "Not provided"}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Price</p>
-          <p className="mt-2 text-sm font-semibold text-indigo-300">${gig.price}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Delivery</p>
-          <p className="mt-2 text-sm text-white">{gig.deliveryTime} day(s)</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-400">Rating</p>
-          <p className="mt-2 text-sm text-white">{ratingText}</p>
-        </div>
-      </section>
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-white">About this gig</h2>
+            <p className="mt-4 text-gray-300 whitespace-pre-wrap leading-relaxed">{gig.description}</p>
+          </div>
 
-      <section className="border-b border-white/10 py-8">
-        <h2 className="text-lg font-semibold text-white">Tags</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(gig.tags ?? []).length ? (
-            gig.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-200"
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-white">Images</h2>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {gig.images.map((src, i) => (
+                <img key={i} src={src} alt="" className="rounded-lg border border-white/10 object-cover aspect-video w-full" />
+              ))}
+            </div>
+          </div>
+
+          {gig.faqs.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold text-white">FAQ</h2>
+              <div className="mt-4 space-y-4">
+                {gig.faqs.map((faq, i) => (
+                  <div key={i} className="rounded-lg bg-white/5 p-4 border border-white/10">
+                    <p className="font-medium text-white">Q: {faq.question}</p>
+                    <p className="mt-2 text-gray-400 text-sm">A: {faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Pricing and Order */}
+        <div className="w-full lg:w-96">
+          <div className="sticky top-24 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+            {/* Package Tabs */}
+            <div className="flex border-b border-white/10">
+              {(["basic", "standard", "premium"] as const).map((pkg) => (
+                <button
+                  key={pkg}
+                  onClick={() => setSelectedPackage(pkg)}
+                  disabled={!gig.price[pkg]}
+                  className={`flex-1 py-4 text-sm font-semibold capitalize transition ${
+                    selectedPackage === pkg ? "bg-indigo-500 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  } ${!gig.price[pkg] ? "opacity-30 cursor-not-allowed" : ""}`}
+                >
+                  {pkg}
+                </button>
+              ))}
+            </div>
+
+            {/* Package Details */}
+            <div className="p-6">
+              {currentPackage && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white capitalize">{selectedPackage} Package</h3>
+                    <span className="text-2xl font-bold text-indigo-300">${currentPackage.price}</span>
+                  </div>
+                  <p className="mt-4 text-sm text-gray-300">{currentPackage.description}</p>
+                  
+                  <div className="mt-6 flex items-center gap-4 text-sm font-medium text-white">
+                    <div className="flex items-center gap-1">🕒 {currentPackage.deliveryTime} Days Delivery</div>
+                    <div className="flex items-center gap-1">🔄 {currentPackage.revisions} Revisions</div>
+                  </div>
+
+                  <ul className="mt-6 space-y-2">
+                    {currentPackage.features.map((feature, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                        <span className="text-indigo-400">✓</span> {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => setShowFaqForm(true)}
+                    className="mt-8 w-full rounded-lg bg-indigo-500 py-3 text-sm font-bold text-white transition hover:bg-indigo-400"
+                  >
+                    Continue (${currentPackage.price})
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => setShowContactBox(!showContactBox)}
+                className="mt-4 w-full rounded-lg border border-white/10 py-3 text-sm font-bold text-white transition hover:bg-white/10"
               >
-                {tag}
-              </span>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400">No tags.</p>
-          )}
+                Contact Seller
+              </button>
+            </div>
+          </div>
         </div>
-      </section>
-
-      <section className="border-b border-white/10 py-8">
-        <h2 className="text-lg font-semibold text-white">Features</h2>
-        <div className="mt-4 space-y-2">
-          {(gig.features ?? []).length ? (
-            gig.features.map((feature, i) => (
-              <p key={`${feature}-${i}`} className="text-sm text-gray-300">
-                • {feature}
-              </p>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400">No features listed.</p>
-          )}
-        </div>
-      </section>
-
-      <div className="flex flex-wrap justify-end gap-3 border-t border-white/10 pt-6">
-        <button
-          type="button"
-          onClick={onOrderClick}
-          disabled={isOrdering}
-          className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
-        >
-          Add Specification to Order
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowContactBox((v) => !v)}
-          className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
-        >
-          {showContactBox ? "Close" : "Contact me"}
-        </button>
       </div>
+
+      {/* Requirement Form Overlay */}
+      {showFaqForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#0b1220] p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white">Requirements</h2>
+            <p className="mt-2 text-gray-400">Please provide the necessary information for the seller to start working.</p>
+
+            <div className="mt-8 space-y-6">
+              {questions.length > 0 ? (
+                questions.map((q, i) => (
+                  <div key={i}>
+                    <label className="text-sm font-medium text-white">{q}</label>
+                    <textarea
+                      rows={3}
+                      value={faqAnswers[i] ?? ""}
+                      onChange={(e) => {
+                        const newAnswers = [...faqAnswers];
+                        newAnswers[i] = e.target.value;
+                        setFaqAnswers(newAnswers);
+                      }}
+                      placeholder="Write your answer..."
+                      className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500">No specific requirements needed for this gig.</p>
+              )}
+            </div>
+
+            <div className="mt-10 flex justify-end gap-4">
+              <button onClick={() => setShowFaqForm(false)} className="px-6 py-2 text-gray-400 hover:text-white transition">Cancel</button>
+              <button 
+                onClick={() => setShowOrderConfirm(true)} 
+                disabled={questions.length > 0 && faqAnswers.some(a => !a?.trim())}
+                className="rounded-lg bg-indigo-500 px-8 py-2 font-bold text-white hover:bg-indigo-400 disabled:opacity-30 transition"
+              >
+                Confirm and Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showOrderConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b1220] p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-white">Final Confirmation</h3>
+            <p className="mt-4 text-gray-400 leading-relaxed">
+              You are about to order the <span className="text-white font-bold capitalize">{selectedPackage}</span> package for <span className="text-indigo-300 font-bold">${currentPackage?.price}</span>. Proceed?
+            </p>
+            <div className="mt-8 flex justify-end gap-4">
+              <button onClick={() => setShowOrderConfirm(false)} className="px-4 py-2 text-gray-400 hover:text-white transition">No, wait</button>
+              <button onClick={onOrder} disabled={isOrdering} className="rounded-lg bg-indigo-500 px-6 py-2 font-bold text-white hover:bg-indigo-400 disabled:opacity-30 transition">
+                {isOrdering ? "Processing..." : "Yes, Order Now"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showContactBox && (
-        <section className="mt-4 border-b border-white/10 pb-8">
-          <label className="mb-2 block text-sm text-gray-400">Message to seller</label>
-          <div className="flex flex-col gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-xl border border-white/10 bg-[#0b1220] p-6">
+            <h3 className="text-xl font-bold text-white">Contact {gig.seller.name}</h3>
             <textarea
-              rows={4}
+              rows={5}
               value={contactMessage}
               onChange={(e) => setContactMessage(e.target.value)}
-              placeholder="Hi, I want to ask about this gig..."
-              className="w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+              placeholder="Hi, I'm interested in your gig..."
+              className="mt-6 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
             />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={onSendContactMessage}
-                disabled={isSendingContact}
-                className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
-              >
-                {isSendingContact ? "Sending..." : "Send message"}
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/*hasGigQuestions &&*/ showFaqForm && (
-        <section className="mt-6 border-t border-white/10 pt-6">
-          <h2 className="text-lg font-semibold text-white">
-            {hasGigQuestions ? "Answer FAQ before ordering" : "Add Custom Specifications"}
-          </h2>
-          <p className="mt-1 text-sm text-gray-400">
-            {hasGigQuestions
-              ? "Please answer the seller’s questions."
-              : "Add your custom requirements before placing the order."}
-          </p>
-
-          <div className="mt-5 space-y-5">
-            {hasGigQuestions &&
-              questions.map((q, i) => (
-                <div key={`${q}-${i}`}>
-                  <p className="text-sm text-white">{i + 1}. {q}</p>
-                  <textarea
-                    rows={3}
-                    value={faqAnswers[i] ?? ""}
-                    onChange={(e) => onFaqAnswerChange(i, e.target.value)}
-                    placeholder="Write your answer..."
-                    className="mt-2 w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
-                  />
-                </div>
-              ))}
-
-            <div>
-              <p className="text-sm text-white">Custom Specifications</p>
-              <textarea
-                rows={4}
-                value={customSpecifications}
-                onChange={(e) => setCustomSpecifications(e.target.value)}
-                placeholder="Add any extra requirements, notes, files info, or preferences..."
-                className="mt-2 w-full border-b border-white/10 bg-transparent px-0 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              onClick={onOrderNowClick}
-              disabled={isOrdering}
-              className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
-            >
-              {isOrdering ? "Ordering..." : "Order Now"}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {showOrderConfirm && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b1220] p-5">
-            <p className="text-sm text-gray-200">
-              This action will immediately launch an order to the seller, be sure that you want to make this order
-            </p>
-
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowOrderConfirm(false)}
-                className="rounded-md bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmOrder}
-                disabled={isOrdering}
-                className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
-              >
-                {isOrdering ? "Ordering..." : "Confirm Order"}
+            <div className="mt-6 flex justify-end gap-4">
+              <button onClick={() => setShowContactBox(false)} className="px-4 py-2 text-gray-400 hover:text-white transition">Cancel</button>
+              <button onClick={onSendContactMessage} disabled={isSendingContact} className="rounded-lg bg-indigo-500 px-6 py-2 font-bold text-white hover:bg-indigo-400 transition">
+                {isSendingContact ? "Sending..." : "Send Message"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-      {success && <p className="mt-4 text-sm text-emerald-400">{success}</p>}
+      {error && <div className="fixed bottom-8 right-8 rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-red-400">{error}</div>}
+      {success && <div className="fixed bottom-8 right-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-4 text-emerald-400">{success}</div>}
     </div>
   );
 }

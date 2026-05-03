@@ -51,21 +51,59 @@ export async function getSimpleUserDetails(userId: string): Promise<SimpleUserDe
 }
 
 export async function getOrdersBetweenSellerBuyer(
-  sellerId: string,
-  buyerId: string
+  meId: string,
+  otherId: string
 ): Promise<ProjectOrderSummary[]> {
-  const url = `${API_BASE}/simpleorders/byusers?me=${encodeURIComponent(sellerId)}&other=${encodeURIComponent(buyerId)}`;
+  // Fetch all orders where I am the buyer OR the seller, then filter to those involving the other user.
+  const [buyerRes, sellerRes] = await Promise.all([
+    fetch(`${API_BASE}/orders/buyer`, { method: "GET", credentials: "include" }),
+    fetch(`${API_BASE}/orders/seller`, { method: "GET", credentials: "include" }),
+  ]);
 
-  const res = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-  });
+  const buyerData = await parseJson<{ orders: any[] }>(buyerRes);
+  const sellerData = await parseJson<{ orders: any[] }>(sellerRes);
 
-  const data = await parseJson<GetOrdersBetweenUsersResponse>(res);
+  const buyerOrders: ProjectOrderSummary[] = (buyerData?.orders ?? [])
+    .filter((o: any) => {
+      const sellerId = String(o?.seller?._id ?? o?.seller ?? "");
+      return sellerId === otherId;
+    })
+    .map(mapOrder);
 
-  if (!res.ok) throw new Error(`Failed to fetch project chats (${res.status})`);
+  const sellerOrders: ProjectOrderSummary[] = (sellerData?.orders ?? [])
+    .filter((o: any) => {
+      const buyerId = String(o?.buyer?._id ?? o?.buyer ?? "");
+      return buyerId === otherId;
+    })
+    .map(mapOrder);
 
-  return Array.isArray(data?.orders) ? data!.orders : [];
+  // Return combined and deduplicated list
+  const seen = new Set<string>();
+  const all: ProjectOrderSummary[] = [];
+  for (const o of [...buyerOrders, ...sellerOrders]) {
+    if (!seen.has(o._id)) {
+      seen.add(o._id);
+      all.push(o);
+    }
+  }
+  return all;
+}
+
+function mapOrder(o: any): ProjectOrderSummary {
+  return {
+    _id: String(o._id ?? ""),
+    role: o.buyer?._id === o.seller?._id ? "buyer" : undefined,
+    gig: {
+      title: o.gig?.title ?? "Untitled Gig",
+      images: o.gig?.images ?? [],
+      category: o.gig?.category ?? "",
+      price: o.gig?.price?.basic?.price ?? o.price ?? 0,
+    },
+    price: o.totalAmount ?? o.price ?? 0,
+    status: o.status,
+    package: o.package,
+    createdAt: o.createdAt,
+  };
 }
 
 type SendMessagePayload = {
@@ -120,7 +158,7 @@ export async function markMessageAsRead(messageId: string): Promise<MarkMessageR
 
   const data = (await res.json().catch(() => null)) as MarkMessageReadResponse | null;
 
-  if (!res.ok || !data?.messageId) {
+  if (!res.ok) {
     throw new Error(`Failed to mark message as read (${res.status})`);
   }
 

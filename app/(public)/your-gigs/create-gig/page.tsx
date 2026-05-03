@@ -21,6 +21,7 @@ export default function CreateGigPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Main Form State matching the JSON structure exactly
   const [formData, setFormData] = useState({
@@ -107,30 +108,59 @@ export default function CreateGigPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitError('');
     try {
-      // Map frontend model to the required request format
+      // Front-end validation
+      const basicDays = Number(formData.price.basic.deliveryDays);
+      if (!formData.title.trim()) throw new Error('Please enter a gig title.');
+      if (!formData.category) throw new Error('Please select a category.');
+      if (!formData.price.basic.price || Number(formData.price.basic.price) < 5)
+        throw new Error('Basic package price must be at least $5.');
+      if (!basicDays || basicDays < 1 || basicDays > 30)
+        throw new Error('Basic package delivery time must be between 1 and 30 days.');
+      if (!formData.images.length) throw new Error('Please add at least one image URL.');
+
+      // Helper to map a package from form state to backend shape
+      const mapPackage = (pkg: typeof formData.price.basic) => ({
+        price: Number(pkg.price) || 0,
+        description: pkg.description || pkg.title || '',
+        deliveryTime: Math.min(30, Math.max(1, Number(pkg.deliveryDays) || 1)),
+        revisions: pkg.revisions === 'unlimited' ? 999 : Math.max(0, Number(pkg.revisions) || 0),
+        features: [],
+      });
+
+      const basicPkg = mapPackage(formData.price.basic);
+
+      // Only include standard/premium if the user filled in BOTH price AND deliveryDays
+      const standardFilled = !!(formData.price.standard.price && formData.price.standard.deliveryDays);
+      const premiumFilled = !!(formData.price.premium.price && formData.price.premium.deliveryDays);
+
+      const standardPkg = standardFilled ? mapPackage(formData.price.standard) : undefined;
+      const premiumPkg = premiumFilled ? mapPackage(formData.price.premium) : undefined;
+
       const payload = {
         metadata: {
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          subcategory: formData.subcategory,
+          subcategory: formData.subcategory || 'General',
           tags: formData.tags,
-          price: formData.price, // Sending entire package object, as user JSON specified
+          price: {
+            basic: basicPkg,
+            ...(standardPkg ? { standard: standardPkg } : {}),
+            ...(premiumPkg ? { premium: premiumPkg } : {}),
+          },
           images: formData.images,
           faqs: formData.faqs,
           requirements: formData.requirements,
-          // Fallbacks for standard gig endpoint schema constraints
-          deliveryTime: Number(formData.price.basic.deliveryDays) || 0,
-          revisions: formData.price.basic.revisions === 'unlimited' ? -1 : Number(formData.price.basic.revisions),
         }
       };
 
       await createGig(payload);
       setIsSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to publish gig.');
+      setSubmitError(err?.message || 'Failed to publish gig. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -481,6 +511,13 @@ export default function CreateGigPage() {
               )}
             </motion.div>
           </AnimatePresence>
+
+          {/* Error Banner */}
+          {submitError && (
+            <div className="absolute bottom-[80px] left-0 right-0 px-6 py-3 bg-red-50 border-t border-red-200 z-10">
+              <p className="text-sm text-red-600 font-medium">⚠️ {submitError}</p>
+            </div>
+          )}
 
           {/* Navigation Footer Fixed at Bottom of Card */}
           <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-neutral-100 flex items-center justify-between z-10 rounded-b-[2rem]">

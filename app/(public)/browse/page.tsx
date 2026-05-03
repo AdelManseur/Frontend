@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
-import { getGigCategories, getSimpleGigs, sendAIMessage, getAIChatHistory } from "./req-res";
+import { getGigCategories, getGigs, sendAIMessage, getAIChatHistory } from "./req-res";
 import { getMe } from "../req-res";
 import Link from "next/link";
 import type { BuyerGig, AIMessage } from "./interfaces";
@@ -61,10 +61,9 @@ export default function BrowsePage() {
 
     try {
       const [result, me] = await Promise.all([
-        getSimpleGigs({
+        getGigs({
           search,
           category: selectedCategory || undefined,
-          tags: overrideTags ?? selectedTags,
           page: 1,
           limit: 50,
         }),
@@ -77,13 +76,7 @@ export default function BrowsePage() {
 
       // hide my own gigs + only active gigs
       const visible = (result.gigs ?? []).filter((g: any) => {
-        const ownerId =
-          g?.seller?._id ||
-          g?.user?._id ||
-          g?.userId ||
-          g?.ownerId ||
-          "";
-
+        const ownerId = String(g?.seller?._id || g?.seller || "");
         return g.isActive !== false && ownerId !== currentUserId;
       });
 
@@ -301,11 +294,14 @@ export default function BrowsePage() {
 
                     <div className="mt-3 flex items-center justify-between text-sm">
                       <span className="rounded bg-white/10 px-2 py-1 text-gray-300">{gig.category}</span>
-                      <span className="font-semibold text-indigo-300">${gig.price}</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] text-gray-500 uppercase">Starting at</span>
+                        <span className="font-semibold text-indigo-300">${gig.price.basic.price}</span>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                      <span>{gig.deliveryTime} day(s)</span>
+                      <span>{gig.price.basic.deliveryTime} day(s)</span>
                       <span>
                         ⭐ {gig.rating?.average?.toFixed?.(1) ?? "0.0"} ({gig.rating?.count ?? 0})
                       </span>

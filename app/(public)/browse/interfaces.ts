@@ -9,41 +9,54 @@ export interface GigRating {
   count: number;
 }
 
+export interface GigPackage {
+  price: number;
+  description: string;
+  deliveryTime: number;
+  revisions: number;
+  features: string[];
+}
+
 export interface BuyerGig {
   _id: string;
   title: string;
   description: string;
   category: string;
-  price: number;
-  deliveryTime: number;
-  images?: string[];
-  tags?: string[];
-  rating?: {
+  subcategory: string;
+  price: {
+    basic: GigPackage;
+    standard?: GigPackage;
+    premium?: GigPackage;
+  };
+  images: string[];
+  tags: string[];
+  rating: {
     average: number;
     count: number;
   };
-  seller?: {
+  seller: {
     _id: string;
     name: string;
-    email: string;
     pfp?: string;
+    rating?: number;
   };
-  isActive?: boolean;
+  isActive: boolean;
+  totalOrders?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GigsPagination {
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  hasNext?: boolean;
-  hasPrev?: boolean;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
-export interface GetSimpleGigsResponse {
+export interface GetGigsResponse {
   gigs: BuyerGig[];
-  total: number;
-  page: number;
-  limit: number;
+  pagination: GigsPagination;
 }
 
 export interface GetCategoriesResponse {
