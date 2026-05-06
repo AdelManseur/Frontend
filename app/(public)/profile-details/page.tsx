@@ -1,84 +1,14 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { UserCircle, Save, X, Plus, Trash2 } from "lucide-react";
-
-// Mock interfaces - replace with your actual types
-interface UserAddress {
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-}
-
-interface UserSpecializedProfile {
-  aboutMe: string;
-  additionalPhones: string[];
-  additionalEmails: string[];
-  niches: string[];
-}
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone?: string;
-  bday?: string;
-  pfp?: string;
-  address?: UserAddress;
-  fieldsOfInterest?: string[];
-  specializedProfile?: UserSpecializedProfile;
-}
+import { UserCircle, Save, X } from "lucide-react";
+import { getMe, updateMe } from "../req-res";
+import type { UserProfile, UserAddress } from "../interfaces";
 
 const emptyAddress: UserAddress = { street: "", city: "", postalCode: "", country: "" };
 
-const emptySpecializedProfile: UserSpecializedProfile = {
-  aboutMe: "",
-  additionalPhones: [],
-  additionalEmails: [],
-  niches: [],
-};
-
-// Mock functions - replace with actual API calls
-const getMyProfile = async () => {
-  return new Promise<{ logged: boolean; message?: string; user: UserProfile }>((resolve) => {
-    setTimeout(() => {
-      resolve({
-        logged: true,
-        user: {
-          name: "Jane Smith",
-          email: "jane@example.com",
-          phone: "+213 555 123 456",
-          bday: "1995-06-15",
-          pfp: "https://placehold.co/200x200/e5e7eb/1f2937?text=JS",
-          address: {
-            street: "123 Main Street",
-            city: "Algiers",
-            postalCode: "16000",
-            country: "Algeria",
-          },
-          fieldsOfInterest: ["Design", "Development", "Marketing"],
-          specializedProfile: {
-            aboutMe: "Passionate freelancer with 5+ years of experience.",
-            additionalPhones: ["+213 555 987 654"],
-            additionalEmails: ["jane.business@example.com"],
-            niches: ["SaaS Design", "E-commerce Development"],
-          },
-        },
-      });
-    }, 1000);
-  });
-};
-
-const updateMyProfile = async (data: any) => {
-  return new Promise<{ message: string }>((resolve) => {
-    setTimeout(() => {
-      resolve({ message: "Profile updated successfully!" });
-    }, 1000);
-  });
-};
-
-export default function SellerProfileDetails() {
+export default function ProfileDetailsPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -94,36 +24,12 @@ export default function SellerProfileDetails() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [additionalPhones, setAdditionalPhones] = useState<string[]>([""]);
-  const [additionalEmails, setAdditionalEmails] = useState<string[]>([""]);
-  const [niches, setNiches] = useState<string[]>([""]);
-  const [aboutMe, setAboutMe] = useState("");
-
-  const updateListItem = (
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-    index: number,
-    value: string
-  ) => {
-    setter((prev) => prev.map((item, i) => (i === index ? value : item)));
-  };
-
-  const addListItem = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    setter((prev) => [...prev, ""]);
-  };
-
-  const removeListItem = (
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-    index: number
-  ) => {
-    setter((prev) => prev.filter((_, i) => i !== index));
-  };
-
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const me = await getMyProfile();
+        const me = await getMe();
         if (!mounted) return;
         if (!me.logged) throw new Error(me.message || "Not logged in.");
 
@@ -136,21 +42,6 @@ export default function SellerProfileDetails() {
         });
         setFieldsInput((me.user.fieldsOfInterest ?? []).join(", "));
         setPreview(me.user.pfp ?? "");
-
-        setAboutMe(me.user.specializedProfile?.aboutMe ?? "");
-        setAdditionalPhones(
-          me.user.specializedProfile?.additionalPhones?.length
-            ? me.user.specializedProfile.additionalPhones
-            : [""]
-        );
-        setAdditionalEmails(
-          me.user.specializedProfile?.additionalEmails?.length
-            ? me.user.specializedProfile.additionalEmails
-            : [""]
-        );
-        setNiches(
-          me.user.specializedProfile?.niches?.length ? me.user.specializedProfile.niches : [""]
-        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unexpected error");
       } finally {
@@ -179,13 +70,6 @@ export default function SellerProfileDetails() {
       .map((x) => x.trim())
       .filter(Boolean);
 
-    const specializedProfile: UserSpecializedProfile = {
-      aboutMe: aboutMe.trim(),
-      additionalPhones: additionalPhones.map((x) => x.trim()).filter(Boolean),
-      additionalEmails: additionalEmails.map((x) => x.trim()).filter(Boolean),
-      niches: niches.map((x) => x.trim()).filter(Boolean),
-    };
-
     if (newPassword.trim()) {
       if (newPassword.length < 8) {
         setError("New password must be at least 8 characters.");
@@ -200,18 +84,21 @@ export default function SellerProfileDetails() {
     setIsSaving(true);
 
     try {
-      const metadata = {
-        changeAdd: true,
-        naddress: address,
-        changePass: !!newPassword.trim(),
-        npassword: newPassword.trim() || undefined,
-        changeFOI: true,
-        nfieldsOfInterest: fields,
-        changeSpecialized: true,
-        nspecializedProfile: specializedProfile,
-      };
+      const metadata: any = {};
+      
+      // We always send address if they submit, or we could diff it. We'll send it if not empty.
+      metadata.changeAdd = true;
+      metadata.naddress = address;
 
-      const result = await updateMyProfile({
+      if (newPassword.trim()) {
+        metadata.changePass = true;
+        metadata.npassword = newPassword.trim();
+      }
+
+      metadata.changeFOI = true;
+      metadata.nfieldsOfInterest = fields;
+
+      const result = await updateMe({
         metadata,
         pfp: pfpFile,
         folder: "users",
@@ -223,9 +110,10 @@ export default function SellerProfileDetails() {
       setPfpFile(null);
 
       // Refresh profile
-      const refreshed = await getMyProfile();
+      const refreshed = await getMe();
       if (refreshed.logged) {
         setUser(refreshed.user);
+        setPreview(refreshed.user.pfp ?? preview);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unexpected error");
@@ -239,7 +127,7 @@ export default function SellerProfileDetails() {
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-neutral-900 border-r-transparent"></div>
-          <p className="mt-4 text-sm text-neutral-600">Loading profile...</p>
+          <p className="mt-4 text-sm text-neutral-600">Loading profile details...</p>
         </div>
       </div>
     );
@@ -262,7 +150,7 @@ export default function SellerProfileDetails() {
               Manage Your Profile
             </h1>
             <p className="mt-2 text-sm text-neutral-600">
-              Update your photo, address, password, interests, and specialized information.
+              Update your photo, address, password, and fields of interest.
             </p>
           </motion.div>
         </div>
@@ -326,8 +214,9 @@ export default function SellerProfileDetails() {
                 <input
                   value={user?.name ?? ""}
                   disabled
-                  className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-500"
+                  className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-500 cursor-not-allowed"
                 />
+                <p className="mt-2 text-xs text-neutral-500">Name cannot be changed directly.</p>
               </div>
 
               <div>
@@ -335,8 +224,9 @@ export default function SellerProfileDetails() {
                 <input
                   value={user?.email ?? ""}
                   disabled
-                  className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-500"
+                  className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-500 cursor-not-allowed"
                 />
+                <p className="mt-2 text-xs text-neutral-500">Email cannot be changed directly.</p>
               </div>
             </div>
           </motion.section>
@@ -420,7 +310,7 @@ export default function SellerProfileDetails() {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="rounded-3xl border border-neutral-200 bg-white p-8"
           >
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-6">Password</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-6">Security</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-neutral-900 mb-2">
@@ -430,6 +320,7 @@ export default function SellerProfileDetails() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Leave blank to keep current password"
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
                 />
               </div>
@@ -444,144 +335,6 @@ export default function SellerProfileDetails() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
                 />
-              </div>
-            </div>
-          </motion.section>
-
-          {/* Specialized Profile */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="rounded-3xl border border-neutral-200 bg-white p-8"
-          >
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-2">
-              Specialized Profile
-            </h2>
-            <p className="text-sm text-neutral-600 mb-6">
-              Add optional contact methods, a short introduction, and your niches.
-            </p>
-
-            <div className="space-y-8">
-              {/* About Me */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 mb-2">About Me</label>
-                <textarea
-                  value={aboutMe}
-                  onChange={(e) => setAboutMe(e.target.value)}
-                  rows={4}
-                  placeholder="Tell buyers about your background, strengths, and work style..."
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20 resize-none"
-                />
-              </div>
-
-              {/* Additional Phones */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 mb-4">
-                  Additional Phone Numbers
-                </label>
-                <div className="space-y-3">
-                  {additionalPhones.map((phone, i) => (
-                    <div key={`phone-${i}`} className="flex gap-3">
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => updateListItem(setAdditionalPhones, i, e.target.value)}
-                        placeholder="+213 555 123 4567"
-                        className="flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                      />
-                      {additionalPhones.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeListItem(setAdditionalPhones, i)}
-                          className="flex items-center justify-center w-11 h-11 rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => addListItem(setAdditionalPhones)}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add phone
-                  </button>
-                </div>
-              </div>
-
-              {/* Additional Emails */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 mb-4">
-                  Additional Emails
-                </label>
-                <div className="space-y-3">
-                  {additionalEmails.map((email, i) => (
-                    <div key={`email-${i}`} className="flex gap-3">
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => updateListItem(setAdditionalEmails, i, e.target.value)}
-                        placeholder="alt-email@example.com"
-                        className="flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                      />
-                      {additionalEmails.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeListItem(setAdditionalEmails, i)}
-                          className="flex items-center justify-center w-11 h-11 rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => addListItem(setAdditionalEmails)}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add email
-                  </button>
-                </div>
-              </div>
-
-              {/* Niches */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 mb-4">Niches</label>
-                <div className="space-y-3">
-                  {niches.map((niche, i) => (
-                    <div key={`niche-${i}`} className="flex gap-3">
-                      <input
-                        type="text"
-                        value={niche}
-                        onChange={(e) => updateListItem(setNiches, i, e.target.value)}
-                        placeholder="e.g. SaaS Copywriting, Fitness Coaching..."
-                        className="flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 transition-all focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                      />
-                      {niches.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeListItem(setNiches, i)}
-                          className="flex items-center justify-center w-11 h-11 rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => addListItem(setNiches)}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add niche
-                  </button>
-                </div>
               </div>
             </div>
           </motion.section>

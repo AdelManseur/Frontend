@@ -43,3 +43,83 @@ export async function logoutUser(): Promise<void> {
     window.location.assign("/");
   }
 }
+
+export async function becomeASeller(): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/users/become-seller`, {
+    method: "POST", credentials: "include"
+  });
+  if (!res.ok) throw new Error("Failed to become a seller");
+  return res.json();
+}
+
+export async function updateMe(data: { metadata: any; pfp: File | null; folder?: string }): Promise<{ message: string }> {
+  const formData = new FormData();
+  formData.append("metadata", JSON.stringify(data.metadata));
+  if (data.pfp) {
+    formData.append("pfp", data.pfp);
+  }
+  if (data.folder) {
+    formData.append("folder", data.folder);
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/users/update-profile`, {
+    method: "PUT",
+    credentials: "include",
+    body: formData,
+  });
+
+  const resData = await res.json();
+  if (!res.ok) throw new Error(resData.message || "Failed to update profile");
+  return resData;
+}
+
+export async function getSellerDashboardStats(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/users/seller-dashboard`, {
+    method: "GET",
+    credentials: "include",
+  });
+  
+  const raw = await res.text();
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
+  const data = isJson && raw ? JSON.parse(raw) : null;
+  
+  if (!res.ok) {
+    throw new Error(data?.message || `Failed to load dashboard stats (${res.status})`);
+  }
+  
+  return data.data;
+}
+
+export async function submitFeedback(message: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/users/feedback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ message }),
+  });
+  
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.message || `Failed to submit feedback`);
+  }
+  return data;
+}
+
+export async function getEarningsData(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/users/earnings`, {
+    method: "GET",
+    credentials: "include",
+  });
+  
+  const raw = await res.text();
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
+  const data = isJson && raw ? JSON.parse(raw) : null;
+  
+  if (!res.ok) {
+    throw new Error(data?.message || `Failed to load earnings (${res.status})`);
+  }
+  
+  return data.data;
+}

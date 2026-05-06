@@ -15,6 +15,8 @@ export interface UserProfile {
   address?: UserAddress;
   createdAt?: string;
   updatedAt?: string;
+  isSeller?: boolean;
+  fieldsOfInterest?: string[];
 }
 
 export interface MeSuccessResponse {

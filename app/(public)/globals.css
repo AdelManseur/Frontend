@@ -1,26 +1,149 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens ─────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Typography */
+  --font-body: var(--font-jakarta, 'Plus Jakarta Sans', system-ui, sans-serif);
+
+  /* Buyer Mode */
+  --jm-bg:            #F8FAFC;
+  --jm-text:          #0F172A;
+  --jm-muted:         #64748B;
+  --jm-violet:        #7C3AED;
+  --jm-pink:          #EC4899;
+  --jm-grad:          var(--jm-violet);
+  --jm-grad-hover:    #6D28D9;
+
+  /* Glass */
+  --jm-glass-bg:      rgba(255, 255, 255, 0.65);
+  --jm-glass-border:  rgba(255, 255, 255, 0.85);
+  --jm-glass-shadow:  0 8px 32px rgba(124, 58, 237, 0.08);
+
+  /* Seller Mode (dark) */
+  --jm-seller-bg:       #0D0D1A;
+  --jm-seller-surface:  rgba(124, 58, 237, 0.07);
+  --jm-seller-border:   rgba(124, 58, 237, 0.18);
+  --jm-seller-glass:    rgba(13, 13, 26, 0.72);
+
+  /* Shared */
+  --jm-radius:   1.25rem;
+  --jm-radius-sm: 0.75rem;
 }
 
+/* ─── Global Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--jm-bg);
+  color: var(--jm-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Glass Card Utility ─────────────────────────────────────────────── */
+.glass-card {
+  background: var(--jm-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--jm-glass-border);
+  border-radius: var(--jm-radius);
+  box-shadow: var(--jm-glass-shadow);
+}
+
+.glass-card-dark {
+  background: var(--jm-seller-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--jm-seller-border);
+  border-radius: var(--jm-radius);
+}
+
+/* ─── Gradient Text Utility ──────────────────────────────────────────── */
+.grad-text {
+  background: var(--jm-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Gradient Button Utility ────────────────────────────────────────── */
+.grad-btn {
+  background: var(--jm-grad);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.grad-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+}
+
+.grad-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── Gradient Border Pill ───────────────────────────────────────────── */
+.grad-border-pill {
+  position: relative;
+  border-radius: 999px;
+  background: var(--jm-glass-bg);
+  backdrop-filter: blur(12px);
+}
+
+.grad-border-pill::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--jm-grad);
+  z-index: -1;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.grad-border-pill:hover::before {
+  opacity: 1;
+}
+
+/* ─── Mesh Orb Animations ────────────────────────────────────────────── */
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(60px, -40px) scale(1.08); }
+  66%       { transform: translate(-30px, 30px) scale(0.95); }
+}
+
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(-50px, 60px) scale(1.05); }
+  70%       { transform: translate(40px, -20px) scale(0.97); }
+}
+
+@keyframes floatOrb3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(30px, 50px) scale(1.1); }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Tailwind Theme Bridge ──────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--jm-bg);
+  --color-foreground: var(--jm-text);
+  --font-sans: var(--font-body);
+  --font-mono: 'Geist Mono', monospace;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/*body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}*/

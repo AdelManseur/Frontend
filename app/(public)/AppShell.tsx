@@ -1,21 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { getMe, logoutUser } from "./req-res";
+import { useEffect, useState } from "react";
+import { getMe } from "./req-res";
 import type { MeResponse } from "./interfaces";
-
-type NavItem = { label: string; href: string };
+import BuyerShell from "./components/buyer/BuyerShell";
+import SellerShell from "./components/seller/SellerShell";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [session, setSession] = useState<MeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [openMenu, setOpenMenu] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [mode, setMode] = useState<"buyer" | "seller">("buyer");
 
   useEffect(() => {
     let mounted = true;
@@ -28,7 +26,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const me = await getMe();
-        if (mounted) setSession(me);
+        if (mounted) {
+          setSession(me);
+          
+          // Determine initial mode based on localStorage and seller status
+          const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
+          const isSeller = me.logged && me.user.isSeller;
+          
+          const newMode = savedMode === "seller" && isSeller ? "seller" : "buyer";
+          setMode(newMode);
+
+          // Redirect logged-in users away from the public marketing homepage
+          if (pathname === "/") {
+            router.replace(newMode === "seller" ? "/seller-dashboard" : "/browse");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch session", err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -40,143 +54,47 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("jobme.sidebar.collapsed");
-    if (saved === "1") setIsSidebarCollapsed(true);
-  }, []);
+    window.localStorage.setItem("jobme.mode", mode);
+  }, [mode]);
 
-  useEffect(() => {
-    window.localStorage.setItem("jobme.sidebar.collapsed", isSidebarCollapsed ? "1" : "0");
-  }, [isSidebarCollapsed]);
-
-  const userItems = useMemo<NavItem[]>(
-    () => [
-      { label: "Profile", href: "/profile" },
-      { label: "Browse", href: "/browse" },
-      { label: "Your Gigs", href: "/your-gigs" },
-      { label: "Chats", href: "/chats" },
-      { label: "Orders to Buy", href: "/orders-to-buy" },
-      { label: "Orders to Sell", href: "/orders-to-sell" },
-      { label: "Saved", href: "/saved" },
-      { label: "Spendings", href: "/spendings" },
-      { label: "Earnings", href: "/earnings" },
-    ],
-    []
-  );
-
-  const onLogout = async () => {
-    await logoutUser();
-    setOpenMenu(false);
-    router.refresh();
-  };
-
-  if (isLoading) return <main className="min-h-screen grid place-items-center">Loading...</main>;
-  if (!session?.logged) return <>{children}</>;
-
-  return (
-    <main className="h-screen w-screen overflow-hidden bg-[#0b1220] text-white">
-      <div className="flex h-full">
-        <aside
-          className={`relative h-screen shrink-0 border-r border-white/10 bg-[#0b1220] p-3 backdrop-blur transition-all duration-300 ${
-            isSidebarCollapsed ? "w-20" : "w-56"
-          }`}
+  if (isLoading) return (
+    <main
+      className="min-h-screen grid place-items-center"
+      style={{ background: "var(--jm-bg)" }}
+    >
+      <div className="flex flex-col items-center gap-4">
+        <span
+          className="text-4xl font-extrabold tracking-tight"
+          style={{
+            color: "var(--jm-violet)",
+            animation: "pulse 1.5s ease-in-out infinite",
+          }}
         >
-          <div className="flex h-full flex-col">
-            <button
-              type="button"
-              onClick={() => setIsSidebarCollapsed((v) => !v)}
-              className="absolute -right-3 top-6 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/20 bg-[#111827] text-xs text-gray-200 hover:bg-[#1f2937]"
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isSidebarCollapsed ? "›" : "‹"}
-            </button>
-
-            <h2 className={`text-lg font-semibold transition-opacity ${isSidebarCollapsed ? "text-center text-sm" : ""}`}>
-              {isSidebarCollapsed ? "JM" : "JobMe"}
-            </h2>
-
-            <nav className="mt-6 space-y-2">
-              {userItems.map((item) => {
-                const active = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={item.label}
-                    className={`block rounded-md px-3 py-2 text-sm ${
-                      active ? "bg-indigo-500 text-white" : "text-gray-300 hover:bg-white/10"
-                    } ${isSidebarCollapsed ? "text-center" : ""}`}
-                  >
-                    {isSidebarCollapsed ? item.label.charAt(0) : item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-auto space-y-4">
-              <div className="relative border-t border-white/10 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu((v) => !v)}
-                  className={`flex w-full items-center rounded-md px-2 py-2 hover:bg-white/10 ${
-                    isSidebarCollapsed ? "justify-center" : "gap-3"
-                  }`}
-                >
-                  <img
-                    src={session.user.pfp || "https://placehold.co/80x80/png"}
-                    alt="Profile"
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
-                  {!isSidebarCollapsed && (
-                    <div className="min-w-0 text-left">
-                      <p className="truncate text-sm font-medium">{session.user.name}</p>
-                      <p className="truncate text-xs text-gray-400">{session.user.email}</p>
-                    </div>
-                  )}
-                </button>
-
-                {openMenu && (
-                  <div className="absolute bottom-16 left-0 w-full rounded-xl border border-white/10 bg-[#111827] p-2 shadow-xl">
-                    <div className="mb-2 rounded-md bg-white/5 p-2">
-                      <p className="truncate text-sm font-medium text-white">{session.user.name}</p>
-                      <p className="truncate text-xs text-gray-400">{session.user.email}</p>
-                    </div>
-
-                    <Link
-                      href="/profile-details"
-                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10"
-                    >
-                      Profile Details
-                    </Link>
-                    <button className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10">
-                      Account settings
-                    </button>
-                    <button className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/10">
-                      Help & support
-                    </button>
-
-                    <hr className="my-2 border-white/10" />
-
-                    <button
-                      type="button"
-                      onClick={onLogout}
-                      className="w-full rounded-md bg-red-500/10 px-3 py-2 text-left text-sm font-medium text-red-300 hover:bg-red-500/20"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <section className="min-h-0 flex-1 overflow-y-auto bg-[#111827]">
-          <div className="min-h-full px-8 py-8">
-            {children}
-          </div>
-        </section>
+          jobme<span style={{ opacity: 0.7 }}>.</span>
+        </span>
+        <div
+          className="w-8 h-1 rounded-full"
+          style={{
+            background: "var(--jm-violet)",
+            animation: "pulse 1.5s ease-in-out infinite",
+          }}
+        />
       </div>
     </main>
   );
+
+  
+  if (!session?.logged) {
+    const rawPages = ["/", "/login", "/signup", "/verify-otp"];
+    if (rawPages.includes(pathname)) {
+      return <>{children}</>;
+    }
+    return <BuyerShell session={null} setMode={setMode}>{children}</BuyerShell>;
+  }
+
+  if (mode === "seller") {
+    return <SellerShell session={session} setMode={setMode}>{children}</SellerShell>;
+  }
+
+  return <BuyerShell session={session} setMode={setMode}>{children}</BuyerShell>;
 }

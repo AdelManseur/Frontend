@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { getGigCategories, getGigs, sendAIMessage, getAIChatHistory } from "./req-res";
 import { getMe } from "../req-res";
 import Link from "next/link";
 import type { BuyerGig, AIMessage } from "./interfaces";
 import styles from "./styles.module.css";
+import { Search } from "lucide-react";
 
 // Helper to format AI response with bold text
 const formatAIText = (text: string) => {
@@ -35,11 +37,13 @@ const parseTagsFromAIResponse = (text: string): string[] | null => {
   }
 };
 
-export default function BrowsePage() {
+function BrowseContent() {
+  const searchParams = useSearchParams();
+  const querySearch = searchParams.get("q") || "";
+  const queryCategory = searchParams.get("category") || "";
+
   const [gigs, setGigs] = useState<BuyerGig[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,8 +66,8 @@ export default function BrowsePage() {
     try {
       const [result, me] = await Promise.all([
         getGigs({
-          search,
-          category: selectedCategory || undefined,
+          search: querySearch || undefined,
+          category: queryCategory || undefined,
           page: 1,
           limit: 50,
         }),
@@ -101,7 +105,7 @@ export default function BrowsePage() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory, selectedTags]);
+  }, [querySearch, queryCategory]);
 
   // Load AI chat history when opening chat
   useEffect(() => {
@@ -165,8 +169,6 @@ export default function BrowsePage() {
       if (tags?.length) {
         setAiSuggestedTags(tags);
         setSelectedTags(tags);
-        setSearch("");
-        setSelectedCategory("");
 
         await loadGigs(tags);
       }
@@ -180,131 +182,94 @@ export default function BrowsePage() {
   const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="border-b border-white/10 pb-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-indigo-300">Buyer</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">Browse Gigs</h1>
-        <p className="mt-2 text-sm text-gray-400">
-          Discover services from other sellers and open any gig for full details.
+    <div className="mx-auto max-w-[1400px]">
+      <div className="pb-6 mb-6">
+        <h1 className="text-3xl md:text-4xl font-extrabold" style={{ color: "var(--jm-text)" }}>
+          {queryCategory ? `${queryCategory} Services` : querySearch ? `Results for "${querySearch}"` : "Explore Services"}
+        </h1>
+        <p className="mt-2 text-lg" style={{ color: "var(--jm-muted)" }}>
+          Discover professional services tailored to your needs.
         </p>
       </div>
 
-      <div className="py-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="w-full max-w-2xl">
-            <label htmlFor="browse-search" className="mb-2 block text-sm text-gray-400">
-              Search
-            </label>
-            <div className="flex items-center border-b border-white/10 bg-white/3 px-0 py-2">
-              <input
-                id="browse-search"
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search gigs by title, keyword, or category..."
-                className="w-full bg-transparent px-0 text-sm text-white placeholder:text-gray-500 focus:outline-none"
-              />
-            </div>
+      {/* Tags Filter */}
+      {allTags.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-sm font-bold" style={{ color: "var(--jm-muted)" }}>Filter by tags:</span>
           </div>
-
-          <div className="min-w-55">
-            <label htmlFor="category-filter" className="mb-2 block text-sm text-gray-400">
-              Category
-            </label>
-            <select
-              id="category-filter"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full border-b border-white/10 bg-transparent py-2 text-sm text-white focus:outline-none"
-            >
-              <option value="" className="bg-[#111827] text-white">
-                All categories
-              </option>
-              {categories.map((category) => (
-                <option key={category} value={category} className="bg-[#111827] text-white">
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {!!categories.length && (
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("")}
-              className={`rounded-full px-3 py-1.5 text-xs transition ${
-                !selectedCategory
-                  ? "bg-indigo-500 text-white"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
-              }`}
-            >
-              All
-            </button>
-
-            {categories.map((category) => {
-              const active = selectedCategory === category;
-
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => {
+              const active = selectedTags.includes(tag);
               return (
                 <button
-                  key={category}
+                  key={tag}
                   type="button"
-                  onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full px-3 py-1.5 text-xs transition ${
-                    active
-                      ? "bg-indigo-500 text-white"
-                      : "bg-white/5 text-gray-300 hover:bg-white/10"
-                  }`}
+                  onClick={() => toggleTag(tag)}
+                  className="rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200"
+                  style={active ? {
+                    background: "var(--jm-grad)",
+                    color: "#fff",
+                    border: "none",
+                    boxShadow: "0 4px 16px rgba(124,58,237,0.3)",
+                  } : {
+                    background: "rgba(255,255,255,0.6)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    border: "1px solid rgba(124,58,237,0.2)",
+                    color: "var(--jm-muted)",
+                  }}
                 >
-                  {category}
+                  {tag}
                 </button>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="mt-2 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+      {/* Gigs Grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isLoading &&
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="min-h-65 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+          Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.8)", height: "320px" }} />
           ))}
 
         {!isLoading && filteredGigs.length === 0 && (
-          <div className="col-span-2 rounded-xl border border-white/10 bg-white/5 p-6 text-center text-gray-300">
-            No gigs found with current filters.
+          <div className="col-span-full rounded-2xl p-12 text-center" style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.8)" }}>
+            <Search className="w-12 h-12 mx-auto mb-4" style={{ color: "rgba(124,58,237,0.3)" }} />
+            <h3 className="text-lg font-bold mb-2" style={{ color: "var(--jm-text)" }}>No services found</h3>
+            <p style={{ color: "var(--jm-muted)" }}>Try adjusting your search or filters.</p>
           </div>
         )}
 
         {!isLoading &&
           filteredGigs.map((gig) => {
-            const image = gig.images?.[0] || "https://placehold.co/800x450/111827/9ca3af?text=No+Image";
-
+            const image = gig.images?.[0] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80";
             return (
-              <Link key={gig._id} href={`/browse/${gig._id}`} className="block">
-                <article className="overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-indigo-400/40 hover:bg-white/[0.07]">
-                  <div className="h-42.5 w-full bg-black/20">
-                    <img src={image} alt={gig.title} className="h-full w-full object-cover" />
+              <Link key={gig._id} href={`/browse/${gig._id}`} className="block group">
+                <article
+                  className="overflow-hidden rounded-2xl h-full flex flex-col transition-all duration-300 group-hover:-translate-y-1"
+                  style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.85)", boxShadow: "0 4px 20px rgba(124,58,237,0.06)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 12px 40px rgba(124,58,237,0.22)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(124,58,237,0.25)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.06)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.85)"; }}
+                >
+                  <div className="relative h-44 w-full overflow-hidden">
+                    <img src={image} alt={gig.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   </div>
-
-                  <div className="p-4">
-                    <h2 className="line-clamp-1 text-lg font-semibold">{gig.title}</h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-gray-400">{gig.description}</p>
-
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="rounded bg-white/10 px-2 py-1 text-gray-300">{gig.category}</span>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-gray-500 uppercase">Starting at</span>
-                        <span className="font-semibold text-indigo-300">${gig.price.basic.price}</span>
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.1)", color: "var(--jm-violet)" }}>{gig.category}</span>
+                      <div className="flex items-center gap-1 text-sm font-bold" style={{ color: "var(--jm-text)" }}>
+                        <span style={{ color: "var(--jm-pink)" }}>★</span>
+                        {gig.rating?.average?.toFixed?.(1) ?? "0.0"}
+                        <span className="font-normal text-xs" style={{ color: "var(--jm-muted)" }}>({gig.rating?.count ?? 0})</span>
                       </div>
                     </div>
-
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                      <span>{gig.price.basic.deliveryTime} day(s)</span>
-                      <span>
-                        ⭐ {gig.rating?.average?.toFixed?.(1) ?? "0.0"} ({gig.rating?.count ?? 0})
-                      </span>
+                    <h2 className="text-[15px] font-semibold leading-snug line-clamp-2 mb-2 group-hover:underline" style={{ color: "var(--jm-text)" }}>{gig.title}</h2>
+                    <div className="mt-auto pt-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(124,58,237,0.08)" }}>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--jm-muted)" }}>Starting at</span>
+                      <span className="text-lg font-extrabold" style={{ color: "var(--jm-violet)" }}>${gig.price?.basic?.price || 0}</span>
                     </div>
                   </div>
                 </article>
@@ -343,7 +308,6 @@ export default function BrowsePage() {
               <p className={styles.empty}>Start chatting with AI...</p>
             ) : (
               aiMessages.map((msg) => {
-                console.log("Rendering AI message:", msg);
                 const isUser = msg.role === "user";
                 const isAssistant = msg.role === "assistant";
 
@@ -392,5 +356,13 @@ export default function BrowsePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#1DBF73] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <BrowseContent />
+    </Suspense>
   );
 }
