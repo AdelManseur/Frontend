@@ -93,12 +93,12 @@ export async function sendMessageToSeller(
 
 type ConversationResponse = {
   conversation?: {
-    convId: string;
+    _id: string;
     user1Id: string;
     user2Id: string;
     createdAt: string;
   };
-  convIds?: string[];
+  status?: string;
   message?: string;
 };
 
@@ -123,5 +123,28 @@ export async function ensureConversationExists(
     throw new Error(createData?.message || `Failed creating conversation (${createRes.status})`);
   }
 
-  return createData?.conversation?.convId ?? null;
+  return createData?.conversation?._id ?? null;
+}
+
+import type { AIRequestStepPayload, AIRequestStepResponse } from "../../interfaces";
+
+export async function sendAIRequestStep(
+  payload: AIRequestStepPayload
+): Promise<AIRequestStepResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/chatbot/request-builder`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const raw = await res.text();
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
+  const data = isJson && raw ? JSON.parse(raw) : null;
+
+  if (!res.ok) {
+    throw new Error(data?.error || `Failed to generate AI response (${res.status})`);
+  }
+
+  return data as AIRequestStepResponse;
 }

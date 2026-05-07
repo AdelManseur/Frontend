@@ -31,3 +31,32 @@ export interface MeErrorResponse {
 }
 
 export type MeResponse = MeSuccessResponse | MeErrorResponse;
+
+export type AIRequestStep = "intent" | "timeline" | "budget" | "extras" | "compose";
+
+export interface AIRequestDraft {
+  intent: string;
+  timeline: string;
+  budget: string;
+  extras: string;
+  composed: string;
+}
+
+export interface AIRequestStepPayload {
+  from: string;
+  step: AIRequestStep;
+  userInput: string;
+  gigContext: {
+    gigId: string;
+    gigTitle: string;
+    sellerName: string;
+    requirements: string[]; // from BuyerGigDetails.requirements
+  };
+  previousDrafts: Partial<AIRequestDraft>;
+}
+
+export interface AIRequestStepResponse {
+  step: AIRequestStep;
+  aiReply: string;  // conversational message shown as AI bubble
+  draft: string;    // the paragraph / composed message
+}

@@ -6,7 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createOrder, getGigDetails, startChat, sendMessageToSeller, ensureConversationExists } from "./req-res";
 import type { BuyerGigDetails, PackageType } from "./interfaces";
 import { getMe } from "@/app/(public)/req-res";
-import { Star, Clock, RefreshCw } from "lucide-react";
+import { Star, Clock, RefreshCw, Sparkles } from "lucide-react";
+import AIRequestBuilder from "../../components/buyer/AIRequestBuilder";
 
 export default function BuyerGigExpandedPage() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function BuyerGigExpandedPage() {
   const [faqAnswers, setFaqAnswers] = useState<string[]>([]);
   const [showOrderConfirm, setShowOrderConfirm] = useState(false);
 
+  const [showAIBuilder, setShowAIBuilder] = useState(false);
+  const [buyerId, setBuyerId] = useState("");
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -34,6 +38,9 @@ export default function BuyerGigExpandedPage() {
         if (!gigId) throw new Error("Missing gig id.");
         const data = await getGigDetails(gigId);
         if (mounted) setGig(data);
+
+        const me = await getMe();
+        if (mounted && me.logged) setBuyerId(me.user._id);
       } catch (e) {
         if (mounted) setError(e instanceof Error ? e.message : "Unexpected error");
       } finally {
@@ -220,12 +227,27 @@ export default function BuyerGigExpandedPage() {
                 </>
               )}
 
-              <button
-                onClick={() => setShowContactBox(!showContactBox)}
-                className="mt-4 w-full rounded-full border border-neutral-200 bg-white py-3.5 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50 active:scale-95"
-              >
-                Contact Seller
-              </button>
+              <div className="mt-4 flex flex-col gap-2">
+                <button
+                  onClick={() => setShowContactBox(!showContactBox)}
+                  className="w-full rounded-full border border-neutral-200 bg-white py-3.5 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50 active:scale-95"
+                >
+                  Message Seller
+                </button>
+                <button
+                  onClick={() => {
+                    if (!buyerId) {
+                      setError("You must be logged in to use this feature.");
+                      return;
+                    }
+                    setShowAIBuilder(true);
+                  }}
+                  className="w-full rounded-full bg-indigo-50 border border-indigo-100 py-3.5 text-sm font-bold text-indigo-600 transition hover:bg-indigo-100 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> Get AI Help Writing Your Request
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
@@ -312,6 +334,21 @@ export default function BuyerGigExpandedPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showAIBuilder && gig && buyerId && (
+        <AIRequestBuilder 
+          isOpen={showAIBuilder}
+          onClose={() => setShowAIBuilder(false)}
+          buyerId={buyerId}
+          sellerId={resolveSellerId(gig)}
+          gigContext={{
+            gigId: gig._id,
+            gigTitle: gig.title,
+            sellerName: gig.seller.name,
+            requirements: gig.requirements || []
+          }}
+        />
       )}
 
       {error && <div className="fixed bottom-8 right-8 z-[100] rounded-xl bg-red-50 border border-red-100 p-4 text-sm font-bold text-red-600 shadow-lg">{error}</div>}

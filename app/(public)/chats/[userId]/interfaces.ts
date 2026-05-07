@@ -1,8 +1,21 @@
+export type MessageType = "text" | "custom_offer";
+
+export interface ICustomOffer {
+  title: string;
+  description: string;
+  price: number;
+  deliveryTime: number;   // days
+  revisions: number;
+  status: "pending" | "accepted" | "rejected" | "expired";
+}
+
 export interface ChatMessage {
   _id: string;
   from: string;
   to: string;
   content: string;
+  type?: MessageType;
+  offer?: ICustomOffer;
   createdAt: string;
   read: boolean;
 }
