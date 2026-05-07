@@ -5,6 +5,8 @@ import { Search, ChevronRight, Star, Check, Play, Menu, X, Loader2 } from 'lucid
 import Link from 'next/link';
 import { motion, AnimatePresence, Variants } from 'motion/react';
 import Image from 'next/image';
+import Footer from './components/ui/Footer';
+import MarketingNavbar from './components/ui/MarketingNavbar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Gig {
@@ -54,169 +56,7 @@ async function fetchGigs(params: Record<string, string | number>): Promise<GigsR
 }
 
 // ─── Subcomponents ────────────────────────────────────────────────────────────
-const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLogged, setIsLogged] = useState(false);
 
-  useEffect(() => {
-    import('./req-res').then(({ getMe }) => {
-      getMe().then(me => {
-        if (me?.logged) setIsLogged(true);
-      });
-    });
-
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <>
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as any }}
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${
-          scrolled
-            ? 'bg-white/80 backdrop-blur-2xl border-neutral-200/50 py-4 shadow-sm'
-            : 'bg-transparent border-transparent py-6'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <Link href="/" className={`text-2xl font-semibold tracking-tighter ${scrolled ? 'text-neutral-900' : 'text-white'}`}>
-              JobMe.
-            </Link>
-            <div className="hidden md:flex items-center gap-8">
-              {['Explore', 'Find Work', 'Become a Seller', 'How it Works'].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className={`text-sm font-medium transition-colors ${
-                    scrolled ? 'text-neutral-500 hover:text-neutral-900' : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            {isLogged ? (
-              <Link
-                href="/browse"
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
-                  scrolled
-                    ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                    : 'bg-white text-neutral-900 hover:bg-neutral-100'
-                }`}
-              >
-                Go to Browse
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className={`text-sm font-medium transition-colors ${
-                    scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/80 hover:text-white'
-                  }`}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
-                    scrolled
-                      ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                      : 'bg-white text-neutral-900 hover:bg-neutral-100'
-                  }`}
-                >
-                  Join JobMe
-                </Link>
-              </>
-            )}
-          </div>
-          <button className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
-            <Menu className={`w-6 h-6 ${scrolled ? 'text-neutral-900' : 'text-white'}`} />
-          </button>
-        </div>
-      </motion.nav>
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-white"
-          >
-            <div className="p-6 flex justify-end">
-              <button onClick={() => setMobileMenuOpen(false)}>
-                <X className="w-8 h-8 text-neutral-900" />
-              </button>
-            </div>
-            <div className="px-6 py-8 flex flex-col gap-6">
-              {['Explore', 'Find Work', 'Become a Seller', 'How it Works'].map((item) => (
-                <a key={item} href="#" className="text-3xl font-semibold tracking-tighter text-neutral-900">
-                  {item}
-                </a>
-              ))}
-              <div className="h-px bg-neutral-100 my-4" />
-              {isLogged ? (
-                <Link href="/browse" className="text-xl font-medium text-neutral-900">Go to Browse</Link>
-              ) : (
-                <>
-                  <Link href="/login" className="text-xl font-medium text-neutral-500">Sign In</Link>
-                  <Link href="/signup" className="text-xl font-medium text-neutral-900">Join JobMe</Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-
-const Footer = () => (
-  <footer className="bg-neutral-50 border-t border-neutral-200 pt-24 pb-12">
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-24">
-        {[
-          { title: 'Categories', links: ['Graphics & Design', 'Programming & Tech', 'Digital Marketing', 'Video & Animation'] },
-          { title: 'About', links: ['Careers', 'Press & News', 'Partnerships', 'Privacy Policy'] },
-          { title: 'Support', links: ['Help & Support', 'Trust & Safety', 'Selling on JobMe', 'Buying on JobMe'] },
-          { title: 'Community', links: ['Events', 'Blog', 'Forum', 'Affiliates'] },
-        ].map((col, i) => (
-          <div key={i}>
-            <h4 className="mb-6 text-sm font-semibold tracking-tight text-neutral-900">{col.title}</h4>
-            <ul className="space-y-4">
-              {col.links.map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="pt-8 border-t border-neutral-200 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-4">
-          <span className="text-2xl font-semibold tracking-tighter text-neutral-900">JobMe.</span>
-          <span className="text-sm font-medium text-neutral-400">© 2026 JobMe Inc.</span>
-        </div>
-        <div className="flex items-center gap-8">
-          {['Terms', 'Privacy', 'Cookies'].map((l) => (
-            <a key={l} href="#" className="text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors">{l}</a>
-          ))}
-        </div>
-      </div>
-    </div>
-  </footer>
-);
 
 // ─── Gig Card ─────────────────────────────────────────────────────────────────
 const GigCard = ({ gig, variants }: { gig: Gig; variants: Variants }) => {
@@ -462,7 +302,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white selection:bg-neutral-900 selection:text-white font-sans">
-      <Navbar />
+      <MarketingNavbar hideBecomeSeller={true} />
 
       {/* Hero */}
       <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden pt-20">
@@ -561,24 +401,6 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Trusted By */}
-      <div className="border-b border-neutral-100 bg-white py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-8 md:gap-16 opacity-50 grayscale"
-          >
-            <span className="text-sm font-semibold tracking-widest uppercase text-neutral-500">Trusted by modern teams</span>
-            <div className="flex items-center gap-12 flex-wrap justify-center">
-              {trustedCompanies.map((c) => (
-                <span key={c} className="text-2xl font-bold tracking-tighter text-neutral-800">{c}</span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </div>
 
       {/* Popular Services */}
       <section className="py-32 px-6 max-w-7xl mx-auto">

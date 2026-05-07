@@ -7,6 +7,7 @@ import { Search, Bell, Mail, Heart } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
 
 import VerificationGate from "../ui/VerificationGate";
+import NotificationBell from "../ui/NotificationBell";
 
 interface BuyerNavbarProps {
   session: MeResponse | null;
@@ -48,7 +49,7 @@ export default function BuyerNavbar({ session }: BuyerNavbarProps) {
         {/* Logo */}
         <Link href="/browse" className="flex-shrink-0">
           <span className="text-2xl font-bold tracking-tighter text-neutral-900">
-            jobme.
+            JobMe.
           </span>
         </Link>
 
@@ -79,10 +80,7 @@ export default function BuyerNavbar({ session }: BuyerNavbarProps) {
           {user ? (
             <>
               <div className="flex items-center gap-4 text-neutral-400">
-                <button className="relative hover:text-neutral-900 transition-colors">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                </button>
+                <NotificationBell userId={user._id} mode="buyer" />
                 <Link href="/chats" className="hover:text-neutral-900 transition-colors">
                   <Mail className="w-5 h-5" />
                 </Link>

@@ -85,7 +85,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     </main>
   );
 
-  const rawPages = ["/", "/login", "/signup", "/verify-otp"];
+  const rawPages = ["/", "/login", "/signup", "/verify-otp", "/find-work", "/how-it-works", "/become-a-seller"];
   if (rawPages.includes(pathname || "")) {
     return <>{children}</>;
   }

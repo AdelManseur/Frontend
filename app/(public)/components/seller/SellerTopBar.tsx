@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Mail, HelpCircle, Menu } from "lucide-react";
+import { Mail, HelpCircle, Menu } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
+import NotificationBell from "../ui/NotificationBell";
 
 interface SellerTopBarProps {
   session: MeResponse | null;
@@ -42,14 +43,7 @@ export default function SellerTopBar({ session, title = "Dashboard", onMenuClick
 
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-4" style={{ color: "rgba(255,255,255,0.45)" }}>
-          <button
-            className="relative transition-colors"
-            onMouseEnter={e => (e.currentTarget.style.color = "#A78BFA")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#EC4899] rounded-full border-2" style={{ borderColor: "#0D0D1A" }} />
-          </button>
+          {user && <NotificationBell userId={user._id} mode="seller" />}
           <Link
             href="/chats"
             className="transition-colors"

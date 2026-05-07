@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Briefcase, DollarSign, Package, MessageSquare, ChevronDown, ChevronRight, Globe, ShoppingBag } from "lucide-react";
+import { Briefcase, DollarSign, Package, MessageSquare, ChevronDown, ChevronRight, Globe } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
 
 interface SellerSidebarProps {
@@ -62,7 +62,7 @@ export default function SellerSidebar({ session }: SellerSidebarProps) {
       <div className="h-[65px] px-6 flex items-center" style={{ borderBottom: "1px solid rgba(124,58,237,0.12)" }}>
         <Link href="/seller-dashboard">
           <span className="text-[22px] font-extrabold tracking-tight text-white">
-            jobme
+            JobMe
             <span style={{ color: "var(--jm-violet)" }}>.</span>
           </span>
         </Link>
@@ -171,28 +171,30 @@ export default function SellerSidebar({ session }: SellerSidebarProps) {
 
         <div style={{ height: "1px", background: "rgba(124,58,237,0.1)", margin: "8px 0" }} />
 
+
         <button
-          onClick={() => {
-            window.localStorage.setItem("jobme.mode", "buyer");
-            router.push("/browse");
+          onClick={async () => {
+            if (confirm("Are you sure you want to log out?")) {
+              const { logoutUser } = await import("../../req-res");
+              await logoutUser();
+            }
           }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-[13px] font-semibold transition-all"
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-[13px] font-semibold transition-all mt-1"
           style={{
-            background: "rgba(124,58,237,0.1)",
-            border: "1px solid rgba(124,58,237,0.3)",
-            color: "#A78BFA",
+            background: "rgba(239, 68, 68, 0.05)",
+            border: "1px solid rgba(239, 68, 68, 0.15)",
+            color: "#f87171",
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = "rgba(124,58,237,0.2)";
-            e.currentTarget.style.borderColor = "rgba(124,58,237,0.5)";
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+            e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.25)";
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = "rgba(124,58,237,0.1)";
-            e.currentTarget.style.borderColor = "rgba(124,58,237,0.3)";
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)";
+            e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.15)";
           }}
         >
-          <ShoppingBag className="w-4 h-4" />
-          Switch to Buying
+          Log Out
         </button>
       </div>
     </aside>

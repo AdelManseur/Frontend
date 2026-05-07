@@ -112,10 +112,9 @@ export default function ChatsLayout({ children }: { children: React.ReactNode })
               placeholder="Search conversations…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className={`w-full rounded-xl pl-8 pr-3 py-2 text-[13px] outline-none placeholder:text-[rgba(255,255,255,0.3)] ${mode === 'seller' ? '' : 'border border-neutral-200 text-neutral-900'}`}
+              className={`w-full rounded-xl pl-8 pr-3 py-2 text-[13px] outline-none ${mode === 'seller' ? 'placeholder:text-white/30 border border-white/10' : 'placeholder:text-neutral-400 border border-neutral-200 text-neutral-900'}`}
               style={{
                 background: mode === 'seller' ? "rgba(255,255,255,0.05)" : "white",
-                border: mode === 'seller' ? "1px solid rgba(255,255,255,0.08)" : undefined,
                 color: mode === 'seller' ? "white" : "#171717",
               }}
             />
@@ -137,9 +136,11 @@ export default function ChatsLayout({ children }: { children: React.ReactNode })
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-16 px-4 text-center">
-              <MessageSquare className="w-10 h-10" style={{ color: "rgba(255,255,255,0.15)" }} />
-              <p className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm mb-1 ${mode === 'seller' ? 'bg-white/5 border-white/10 text-white/10' : 'bg-neutral-50 border-neutral-200/60 text-neutral-200'}`}>
+                <MessageSquare className="w-7 h-7" />
+              </div>
+              <p className={`text-[13px] font-medium ${mode === 'seller' ? 'text-white/30' : 'text-neutral-400'}`}>
                 {search ? "No results found." : "No conversations yet."}
               </p>
             </div>

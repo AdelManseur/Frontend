@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { becomeASeller, getMe } from "../req-res";
 import { CheckCircle, Loader2, ArrowRight, Smartphone, ShieldCheck } from "lucide-react";
 import Image from "next/image";
+import MarketingNavbar from "../components/ui/MarketingNavbar";
+import Footer from "../components/ui/Footer";
 
 export default function BecomeASellerPage() {
   const router = useRouter();
@@ -92,6 +94,7 @@ export default function BecomeASellerPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#171717] selection:bg-[#1DBF73] selection:text-white font-sans">
+      <MarketingNavbar forceScrolled={true} />
       <div className="max-w-6xl mx-auto px-6 py-20 lg:py-32 grid lg:grid-cols-2 gap-16 items-center">
         {/* Left Content */}
         <div className="max-w-xl">
@@ -148,6 +151,7 @@ export default function BecomeASellerPage() {
           />
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

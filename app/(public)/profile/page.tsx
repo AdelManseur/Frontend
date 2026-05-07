@@ -2,37 +2,43 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Mail, Phone, MapPin, Edit, User, Tag } from "lucide-react";
+import { Mail, Phone, MapPin, Edit, User, Tag, LogOut } from "lucide-react";
 import Link from "next/link";
-import { getMe } from "../req-res";
+import { getMe, logoutUser } from "../req-res";
 import type { UserProfile } from "../interfaces";
 
-function InfoRow({ label, value, icon: Icon }: { label: string; value?: string; icon?: any }) {
+function InfoRow({ label, value, icon: Icon, mode }: { label: string; value?: string; icon?: any; mode?: string }) {
+  const isSeller = mode === "seller";
   return (
-    <div className="flex items-start gap-4 py-4 border-b border-neutral-200 last:border-0">
+    <div className={`flex items-start gap-4 py-4 border-b last:border-0 ${isSeller ? 'border-white/5' : 'border-neutral-200'}`}>
       {Icon && (
-        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
-          <Icon className="h-5 w-5 text-neutral-600" />
+        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isSeller ? 'bg-white/5' : 'bg-neutral-100'}`}>
+          <Icon className={`h-5 w-5 ${isSeller ? 'text-indigo-400' : 'text-neutral-600'}`} />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-neutral-500 mb-1">{label}</p>
-        <p className="text-sm text-neutral-900">{value?.trim() ? value : "Not provided"}</p>
+        <p className={`text-sm font-medium mb-1 ${isSeller ? 'text-white/30' : 'text-neutral-500'}`}>{label}</p>
+        <p className={`text-sm ${isSeller ? 'text-white/80' : 'text-neutral-900'}`}>{value?.trim() ? value : "Not provided"}</p>
       </div>
     </div>
   );
 }
 
+
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<"buyer" | "seller">("buyer");
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
+        const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
+        if (savedMode) setMode(savedMode);
+
         const me = await getMe();
         if (!mounted) return;
 
@@ -55,10 +61,10 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className={`flex items-center justify-center min-h-screen ${mode === 'seller' ? '' : 'bg-white'}`} style={{ background: mode === 'seller' ? "var(--jm-seller-bg)" : undefined }}>
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-neutral-900 border-r-transparent"></div>
-          <p className="mt-4 text-sm text-neutral-600">Loading profile...</p>
+          <div className={`inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid ${mode === 'seller' ? 'border-white border-r-transparent' : 'border-neutral-900 border-r-transparent'}`}></div>
+          <p className={`mt-4 text-sm ${mode === 'seller' ? 'text-white/60' : 'text-neutral-600'}`}>Loading profile...</p>
         </div>
       </div>
     );
@@ -66,7 +72,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className={`flex items-center justify-center min-h-screen ${mode === 'seller' ? '' : 'bg-white'}`} style={{ background: mode === 'seller' ? "var(--jm-seller-bg)" : undefined }}>
         <div className="text-center">
           <p className="text-red-600">{error || "Profile not found."}</p>
         </div>
@@ -83,14 +89,20 @@ export default function ProfilePage() {
     .filter(Boolean)
     .join(", ");
 
+  const isSellerMode = mode === "seller";
+
   return (
-    <main className="min-h-screen bg-white">
+    <main className={`min-h-screen transition-colors duration-300 ${isSellerMode ? '' : 'bg-white'}`} style={{ background: isSellerMode ? "var(--jm-seller-bg)" : undefined }}>
       {/* Profile Header Card */}
-      <div className="mx-auto max-w-5xl px-6 pt-16 pb-12">
+      <div className="mx-auto max-w-5xl px-6 pt-16 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[2.5rem] p-10 border border-neutral-100 shadow-xl shadow-neutral-100/50 flex flex-col md:flex-row items-center md:items-start justify-between gap-8"
+          className={`rounded-[2.5rem] p-10 border transition-all flex flex-col md:flex-row items-center md:items-start justify-between gap-8 ${
+            isSellerMode 
+              ? 'bg-white/[0.03] border-white/10 shadow-2xl shadow-black/20' 
+              : 'bg-white border-neutral-100 shadow-xl shadow-neutral-100/50'
+          }`}
         >
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
             <motion.div
@@ -102,29 +114,55 @@ export default function ProfilePage() {
               <img
                 src={user.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"}
                 alt={user.name}
-                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-md ring-1 ring-neutral-100"
+                className={`h-32 w-32 rounded-full object-cover border-4 shadow-md ring-1 ${
+                  isSellerMode ? 'border-[#0b1220] ring-white/10' : 'border-white ring-neutral-100'
+                }`}
               />
-              <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+              <div className={`absolute bottom-1 right-1 w-6 h-6 border-4 rounded-full ${isSellerMode ? 'bg-indigo-500 border-[#0b1220]' : 'bg-green-500 border-white'}`}></div>
             </motion.div>
 
             <div className="pt-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-4">
+              <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-4 ${
+                isSellerMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-neutral-100 text-neutral-500'
+              }`}>
                 {user.isSeller ? "Seller Profile" : "Buyer Profile"}
               </div>
-              <h1 className="text-4xl font-bold tracking-tight text-neutral-900 mb-2">
+              <h1 className={`text-4xl font-bold tracking-tight mb-2 ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
                 {user.name}
               </h1>
-              <p className="text-neutral-500 font-medium">{user.email}</p>
+              <p className={`font-medium ${isSellerMode ? 'text-white/40' : 'text-neutral-500'}`}>{user.email}</p>
             </div>
           </div>
 
-          <Link
-            href="/profile-details"
-            className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-neutral-800 active:scale-95 shadow-lg shadow-neutral-900/10"
-          >
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </Link>
+          <div className="flex flex-col gap-3 min-w-[160px]">
+            <Link
+              href="/profile-details"
+              className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all active:scale-95 shadow-lg ${
+                isSellerMode 
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20' 
+                  : 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-neutral-900/10'
+              }`}
+            >
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </Link>
+
+            <button
+              onClick={async () => {
+                if (confirm("Are you sure you want to log out?")) {
+                  await logoutUser();
+                }
+              }}
+              className={`inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all active:scale-95 shadow-sm ${
+                isSellerMode 
+                  ? 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10' 
+                  : 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+              }`}
+            >
+              <LogOut className="h-4 w-4" />
+              Log Out
+            </button>
+          </div>
         </motion.div>
       </div>
 
@@ -136,17 +174,20 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
+            className={`rounded-3xl p-8 border shadow-sm ${
+              isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
+            }`}
           >
             <div className="flex items-center gap-3 mb-8">
-              <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+              <h2 className={`text-xl font-bold tracking-tight ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
                 Account Details
               </h2>
             </div>
             <div className="space-y-1">
-              <InfoRow label="Email Address" value={user.email} icon={Mail} />
-              <InfoRow label="Phone Number" value={user.phone} icon={Phone} />
+              <InfoRow mode={mode} label="Email Address" value={user.email} icon={Mail} />
+              <InfoRow mode={mode} label="Phone Number" value={user.phone} icon={Phone} />
               <InfoRow
+                mode={mode}
                 label="Date of Birth"
                 value={user.bday ? new Date(user.bday).toLocaleDateString() : ""}
                 icon={User}
@@ -161,10 +202,12 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
+              className={`rounded-3xl p-8 border shadow-sm ${
+                isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
+              }`}
             >
-              <h2 className="text-xl font-bold tracking-tight text-neutral-900 mb-6">Location</h2>
-              <InfoRow label="Address" value={fullAddress} icon={MapPin} />
+              <h2 className={`text-xl font-bold tracking-tight mb-6 ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>Location</h2>
+              <InfoRow mode={mode} label="Address" value={fullAddress} icon={MapPin} />
             </motion.section>
 
             {/* Interests */}
@@ -172,10 +215,12 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
+              className={`rounded-3xl p-8 border shadow-sm ${
+                isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
+              }`}
             >
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+                <h2 className={`text-xl font-bold tracking-tight ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
                   Interests
                 </h2>
               </div>
@@ -184,13 +229,17 @@ export default function ProfilePage() {
                   user.fieldsOfInterest?.map((item) => (
                     <span
                       key={item}
-                      className="rounded-full border border-neutral-100 bg-neutral-50 px-4 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:bg-neutral-900 hover:text-white hover:border-neutral-900 cursor-default"
+                      className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors cursor-default ${
+                        isSellerMode 
+                          ? 'bg-white/5 border-white/10 text-white/60 hover:bg-indigo-500 hover:text-white hover:border-indigo-500' 
+                          : 'bg-neutral-50 border-neutral-100 text-neutral-600 hover:bg-neutral-900 hover:text-white hover:border-neutral-900'
+                      }`}
                     >
                       {item}
                     </span>
                   ))
                 ) : (
-                  <p className="text-sm text-neutral-400">No interests selected yet.</p>
+                  <p className={`text-sm ${isSellerMode ? 'text-white/20' : 'text-neutral-400'}`}>No interests selected yet.</p>
                 )}
               </div>
             </motion.section>

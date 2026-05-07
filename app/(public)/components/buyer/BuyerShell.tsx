@@ -4,6 +4,7 @@ import React from "react";
 import BuyerNavbar from "./BuyerNavbar";
 import ParticleCanvas from "../ui/ParticleCanvas";
 import GlobalAIChat from "./GlobalAIChat";
+import Footer from "../ui/Footer";
 import type { MeResponse } from "../../interfaces";
 
 interface BuyerShellProps {
@@ -29,6 +30,7 @@ export default function BuyerShell({ children, session }: BuyerShellProps) {
         {children}
       </main>
 
+      <Footer />
       <GlobalAIChat />
     </div>
   );
