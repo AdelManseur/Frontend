@@ -2,40 +2,12 @@
 
 import { useEffect, useMemo, useState, useRef, type FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { getGigCategories, getGigs, sendAIMessage, getAIChatHistory } from "./req-res";
-import { getMe } from "../req-res";
+import { getGigCategories, getGigs } from "./req-res";
+import { getMe, saveGig, unsaveGig, getSavedGigs } from "../req-res";
 import Link from "next/link";
-import type { BuyerGig, AIMessage } from "./interfaces";
-import styles from "./styles.module.css";
-import { Search } from "lucide-react";
+import type { BuyerGig } from "./interfaces";
+import { Search, Heart, Star } from "lucide-react";
 
-// Helper to format AI response with bold text
-const formatAIText = (text: string) => {
-  return text.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
-};
-
-const parseTagsFromAIResponse = (text: string): string[] | null => {
-  try {
-    const parsed = JSON.parse(text);
-
-    if (Array.isArray(parsed)) {
-      return parsed.map(String).filter(Boolean);
-    }
-
-    if (parsed && typeof parsed === "object") {
-      if (Array.isArray(parsed.tags)) {
-        return parsed.tags.map(String).filter(Boolean);
-      }
-
-      // fallback: treat object keys as tags
-      return Object.keys(parsed).filter(Boolean);
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-};
 
 function BrowseContent() {
   const searchParams = useSearchParams();
@@ -49,15 +21,7 @@ function BrowseContent() {
   const [error, setError] = useState("");
 
   const [myUserId, setMyUserId] = useState<string>("");
-  const [aiPartner, setAiPartner] = useState<string>("");
-
-  // AI Chat state
-  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
-  const [aiMessages, setAiMessages] = useState<AIMessage[]>([]);
-  const [aiDraft, setAiDraft] = useState("");
-  const [aiSending, setAiSending] = useState(false);
-  const [aiError, setAiError] = useState("");
-  const aiMessagesRef = useRef<HTMLDivElement | null>(null);
+  const [savedGigIds, setSavedGigIds] = useState<Set<string>>(new Set());
 
   const loadGigs = async (overrideTags?: string[]) => {
     setIsLoading(true);
@@ -76,7 +40,12 @@ function BrowseContent() {
 
       const currentUserId = me?.logged ? me.user?._id : "";
       setMyUserId(currentUserId || "");
-      setAiPartner("ai-bot");
+
+      if (me?.logged) {
+        getSavedGigs().then(saved => {
+          setSavedGigIds(new Set(saved.map((g: any) => g._id || g)));
+        }).catch(console.error);
+      }
 
       // hide my own gigs + only active gigs
       const visible = (result.gigs ?? []).filter((g: any) => {
@@ -107,26 +76,6 @@ function BrowseContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [querySearch, queryCategory]);
 
-  // Load AI chat history when opening chat
-  useEffect(() => {
-    if (!isAIChatOpen || !myUserId || !aiPartner) return;
-
-    (async () => {
-      try {
-        const history = await getAIChatHistory(myUserId, aiPartner);
-        setAiMessages(history);
-        setAiError("");
-      } catch (err) {
-        setAiError(err instanceof Error ? err.message : "Failed to load chat history");
-      }
-    })();
-  }, [isAIChatOpen, myUserId, aiPartner]);
-
-  // Auto-scroll AI messages
-  useEffect(() => {
-    if (!aiMessagesRef.current) return;
-    aiMessagesRef.current.scrollTop = aiMessagesRef.current.scrollHeight;
-  }, [aiMessages]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -145,41 +94,43 @@ function BrowseContent() {
     );
   };
 
-  const onSendAIMessage = async (e: FormEvent) => {
+  const handleToggleSave = async (e: React.MouseEvent, gigId: string) => {
     e.preventDefault();
-    const content = aiDraft.trim();
-    if (!content || aiSending || !myUserId || !aiPartner) return;
+    e.stopPropagation();
+    
+    if (!myUserId) {
+      alert("Please log in to save gigs.");
+      return;
+    }
+
+    const isSaved = savedGigIds.has(gigId);
+    
+    // Optimistic UI update
+    setSavedGigIds(prev => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(gigId);
+      else next.add(gigId);
+      return next;
+    });
 
     try {
-      setAiSending(true);
-      setAiError("");
-
-      const responses = await sendAIMessage({
-        from: myUserId,
-        to: aiPartner,
-        content,
-      });
-
-      setAiMessages((prev) => [...prev, ...responses]);
-      setAiDraft("");
-
-      const assistantReply = responses.find((m) => m.role === "assistant")?.content;
-      const tags = assistantReply ? parseTagsFromAIResponse(assistantReply) : null;
-      console.log("Parsed tags from AI response:", tags);
-      if (tags?.length) {
-        setAiSuggestedTags(tags);
-        setSelectedTags(tags);
-
-        await loadGigs(tags);
+      if (isSaved) {
+        await unsaveGig(gigId);
+      } else {
+        await saveGig(gigId);
       }
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Failed to send message.");
-    } finally {
-      setAiSending(false);
+      console.error("Failed to toggle save state", err);
+      // Revert optimistic update on error
+      setSavedGigIds(prev => {
+        const next = new Set(prev);
+        if (isSaved) next.add(gigId);
+        else next.delete(gigId);
+        return next;
+      });
     }
   };
 
-  const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -256,12 +207,22 @@ function BrowseContent() {
                 >
                   <div className="relative h-44 w-full overflow-hidden">
                     <img src={image} alt={gig.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <button
+                      onClick={(e) => handleToggleSave(e, gig._id)}
+                      className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm hover:scale-110 transition-transform"
+                    >
+                      <Heart 
+                        className="w-5 h-5 transition-colors" 
+                        fill={savedGigIds.has(gig._id) ? "#ef4444" : "transparent"} 
+                        color={savedGigIds.has(gig._id) ? "#ef4444" : "#64748b"} 
+                      />
+                    </button>
                   </div>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.1)", color: "var(--jm-violet)" }}>{gig.category}</span>
                       <div className="flex items-center gap-1 text-sm font-bold" style={{ color: "var(--jm-text)" }}>
-                        <span style={{ color: "var(--jm-pink)" }}>★</span>
+                        <Star className="w-3.5 h-3.5" style={{ color: "var(--jm-pink)", fill: "var(--jm-pink)" }} />
                         {gig.rating?.average?.toFixed?.(1) ?? "0.0"}
                         <span className="font-normal text-xs" style={{ color: "var(--jm-muted)" }}>({gig.rating?.count ?? 0})</span>
                       </div>
@@ -269,7 +230,7 @@ function BrowseContent() {
                     <h2 className="text-[15px] font-semibold leading-snug line-clamp-2 mb-2 group-hover:underline" style={{ color: "var(--jm-text)" }}>{gig.title}</h2>
                     <div className="mt-auto pt-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(124,58,237,0.08)" }}>
                       <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--jm-muted)" }}>Starting at</span>
-                      <span className="text-lg font-extrabold" style={{ color: "var(--jm-violet)" }}>${gig.price?.basic?.price || 0}</span>
+                      <span className="text-lg font-extrabold" style={{ color: "var(--jm-violet)" }}>{gig.price?.basic?.price || 0} DA</span>
                     </div>
                   </div>
                 </article>
@@ -278,83 +239,6 @@ function BrowseContent() {
           })}
       </div>
 
-      {/* AI Chat FAB */}
-      <button
-        type="button"
-        onClick={() => setIsAIChatOpen((v) => !v)}
-        className={styles.fab}
-        title={isAIChatOpen ? "Close AI chat" : "Open AI chat"}
-      >
-        {isAIChatOpen ? "✕" : "💬"}
-      </button>
-
-      {/* AI Chat Panel */}
-      {isAIChatOpen && (
-        <div className={styles.panel}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>AI Assistant</h3>
-            <button
-              type="button"
-              onClick={() => setIsAIChatOpen(false)}
-              className={styles.closeBtn}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div ref={aiMessagesRef} className={styles.messages}>
-            {aiMessages.length === 0 ? (
-              <p className={styles.empty}>Start chatting with AI...</p>
-            ) : (
-              aiMessages.map((msg) => {
-                const isUser = msg.role === "user";
-                const isAssistant = msg.role === "assistant";
-
-                return (
-                  <div
-                    key={msg._id}
-                    className={`${styles.row} ${
-                      isUser ? styles.rowUser : isAssistant ? styles.rowAssistant : styles.rowAssistant
-                    }`}
-                  >
-                    <div
-                      className={`${styles.bubble} ${
-                        isUser ? styles.bubbleUser : styles.bubbleAssistant
-                      }`}
-                    >
-                      <p
-                        dangerouslySetInnerHTML={{
-                          __html: formatAIText(msg.content),
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {aiError && <p className={styles.error}>{aiError}</p>}
-
-          <form onSubmit={onSendAIMessage} className={styles.composer}>
-            <input
-              value={aiDraft}
-              onChange={(e) => setAiDraft(e.target.value)}
-              placeholder="Ask me anything..."
-              className={styles.input}
-              disabled={aiSending}
-            />
-            <button
-              type="submit"
-              disabled={aiSending || !aiDraft.trim()}
-              className={styles.sendBtn}
-            >
-              {aiSending ? "..." : "Send"}
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

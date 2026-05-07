@@ -6,7 +6,7 @@
   --font-body: var(--font-jakarta, 'Plus Jakarta Sans', system-ui, sans-serif);
 
   /* Buyer Mode */
-  --jm-bg:            #F8FAFC;
+  --jm-bg:            #FFFFFF;
   --jm-text:          #0F172A;
   --jm-muted:         #64748B;
   --jm-violet:        #7C3AED;

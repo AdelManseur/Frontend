@@ -11,49 +11,39 @@ const APP_DOWNLOAD_URL = "#";
 export default function VerifyIdentityPage() {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-6 text-white"
-      style={{ background: "var(--jm-seller-bg)" }}
+      className="min-h-screen flex flex-col items-center justify-center p-6 bg-white text-neutral-900"
     >
-      {/* Glow blob */}
-      <div
-        className="absolute w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
-        style={{ background: "var(--jm-violet)", top: "20%", left: "50%", transform: "translateX(-50%)" }}
-      />
-
-      <div className="relative z-10 glass-card-dark max-w-md w-full p-8 text-center">
+      <div className="relative z-10 bg-white border border-neutral-100 rounded-[2.5rem] shadow-2xl shadow-neutral-200/50 max-w-md w-full p-10 text-center">
         {/* Icon */}
         <div
-          className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
-          style={{ background: "rgba(124,58,237,0.15)", border: "2px solid rgba(124,58,237,0.4)" }}
+          className="w-24 h-24 rounded-2xl mx-auto mb-8 flex items-center justify-center bg-neutral-50 text-neutral-900 border border-neutral-100 shadow-sm"
         >
-          <Smartphone className="w-12 h-12" style={{ color: "var(--jm-violet)" }} />
+          <Smartphone className="w-12 h-12" />
         </div>
 
         {/* Heading */}
-        <h1 className="text-2xl font-bold mb-3">Download the JobMe App</h1>
-        <p className="text-[15px] mb-8" style={{ color: "rgba(255,255,255,0.65)" }}>
-          Identity verification is only available through the <strong className="text-white">JobMe mobile app</strong>.
-          Download the app to verify your identity and unlock buying &amp; selling.
+        <h1 className="text-3xl font-bold mb-4 tracking-tight">Download the JobMe App</h1>
+        <p className="text-[15px] mb-10 text-neutral-500 leading-relaxed">
+          Identity verification is completed through the <strong className="text-neutral-900">JobMe mobile app</strong>.
+          Download the app to verify your identity and unlock full access.
         </p>
 
         {/* Why section */}
         <div
-          className="rounded-xl p-4 mb-8 text-left space-y-3"
-          style={{ background: "rgba(13,13,26,0.6)", border: "1px solid var(--jm-seller-border)" }}
+          className="rounded-2xl p-6 mb-10 text-left space-y-4 bg-neutral-50 border border-neutral-100"
         >
           {[
-            { icon: ShieldCheck, text: "Secure face &amp; ID verification" },
-            { icon: Smartphone, text: "Camera access required for selfies" },
-            { icon: Download,   text: "Fast &amp; free download" },
+            { icon: ShieldCheck, text: "Secure face & ID verification" },
+            { icon: Smartphone, text: "Camera access for identity check" },
+            { icon: Download,   text: "Available for iOS & Android" },
           ].map(({ icon: Icon, text }, i) => (
-            <div key={i} className="flex items-center gap-3 text-[14px]">
+            <div key={i} className="flex items-center gap-4 text-[14px]">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(124,58,237,0.2)" }}
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-neutral-200 text-neutral-700"
               >
-                <Icon className="w-4 h-4" style={{ color: "var(--jm-violet)" }} />
+                <Icon className="w-4 h-4" />
               </div>
-              <span style={{ color: "rgba(255,255,255,0.8)" }} dangerouslySetInnerHTML={{ __html: text }} />
+              <span className="text-neutral-600 font-medium">{text}</span>
             </div>
           ))}
         </div>
@@ -61,15 +51,14 @@ export default function VerifyIdentityPage() {
         {/* CTA */}
         <a
           href={APP_DOWNLOAD_URL}
-          className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-[16px] transition-all hover:brightness-110"
-          style={{ background: "var(--jm-violet)", color: "white" }}
+          className="flex items-center justify-center gap-3 w-full py-4 rounded-full font-bold text-[16px] text-white bg-neutral-900 hover:bg-neutral-800 transition-all active:scale-[0.98] shadow-lg shadow-neutral-900/10"
         >
-          <Download className="w-5 h-5" />
-          Download JobMe App
+          <Smartphone className="w-5 h-5" />
+          Get the App
         </a>
 
-        <p className="mt-4 text-[12px]" style={{ color: "rgba(255,255,255,0.35)" }}>
-          Already verified on the app? Refresh your browser session.
+        <p className="mt-6 text-[12px] text-neutral-400 font-medium">
+          Already verified? Refresh your browser session.
         </p>
       </div>
     </div>

@@ -129,7 +129,7 @@ export default function SellerOrderExpandedPage() {
             <p className="mt-1 text-sm text-gray-400">{order.gig.category}</p>
 
             <div className="mt-5 grid gap-4 md:grid-cols-4 text-sm">
-              <div><p className="text-gray-400">Price</p><p className="text-white">${order.price}</p></div>
+              <div><p className="text-gray-400">Price</p><p className="text-white">{order.price} DA</p></div>
               <div><p className="text-gray-400">Delivery Time</p><p className="text-white">{order.deliveryTime} day(s)</p></div>
               <div><p className="text-gray-400">Revisions</p><p className="text-white">{order.revisions}</p></div>
               <div><p className="text-gray-400">Expected Delivery</p><p className="text-white">{formatDate(order.expectedDelivery)}</p></div>

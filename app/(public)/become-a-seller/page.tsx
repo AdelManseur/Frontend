@@ -1,30 +1,94 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { becomeASeller } from "../req-res";
-import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
+import { becomeASeller, getMe } from "../req-res";
+import { CheckCircle, Loader2, ArrowRight, Smartphone, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 
 export default function BecomeASellerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const me = await getMe();
+        if (!mounted) return;
+        if (!me.logged) { router.push("/login"); return; }
+        if (me.user.isSeller) { router.push("/seller-dashboard"); return; }
+        setIsVerified(me.user.idVerified ?? false);
+      } finally {
+        if (mounted) setCheckingAuth(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [router]);
 
   const handleBecomeSeller = async () => {
     setLoading(true);
     setError(null);
     try {
       await becomeASeller();
-      // On success, set mode to seller and redirect
       window.localStorage.setItem("jobme.mode", "seller");
-      // Force a hard navigation to reload session state from AppShell
       window.location.href = "/seller-dashboard";
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-10 h-10 animate-spin text-neutral-900" />
+      </div>
+    );
+  }
+
+  // ── If not verified, show the app-download wall ─────────────────────────────
+  if (!isVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-white">
+        <div className="max-w-md w-full rounded-[2.5rem] p-10 text-center shadow-2xl shadow-neutral-200/50 border border-neutral-100">
+          <div className="w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center bg-neutral-50 text-neutral-900 border border-neutral-100 shadow-sm">
+            <Smartphone className="w-10 h-10" />
+          </div>
+          <h1 className="text-3xl font-bold mb-4 tracking-tight text-neutral-900">Verify Identity First</h1>
+          <p className="text-[15px] mb-10 text-neutral-500 leading-relaxed">
+            To protect buyers and sellers, you must verify your identity before becoming a seller on JobMe.
+            Verification is completed through the <strong className="text-neutral-900">JobMe mobile app</strong>.
+          </p>
+          <div className="rounded-2xl p-6 mb-10 text-left space-y-4 bg-neutral-50 border border-neutral-100">
+            {[
+              { icon: Smartphone, text: "Download the JobMe app on your phone" },
+              { icon: ShieldCheck, text: "Complete ID + face verification" },
+              { icon: CheckCircle, text: "Come back and start selling" },
+            ].map(({ icon: Icon, text }, i) => (
+              <div key={i} className="flex items-center gap-4 text-[14px]">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-neutral-200 text-neutral-700">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-neutral-600 font-medium">{text}</span>
+              </div>
+            ))}
+          </div>
+          <a
+            href="/verify-identity"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-full font-bold text-[16px] text-white bg-neutral-900 hover:bg-neutral-800 transition-all active:scale-[0.98] shadow-lg shadow-neutral-900/10"
+          >
+            <Smartphone className="w-5 h-5" />
+            Verify Identity
+          </a>
+        </div>
+      </div>
+    );
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-white text-[#171717] selection:bg-[#1DBF73] selection:text-white font-sans">

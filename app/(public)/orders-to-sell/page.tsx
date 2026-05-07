@@ -203,7 +203,7 @@ export default function SellerOrdersPage() {
 
                       <div>
                         <p className="text-gray-400">Order Price</p>
-                        <p className="mt-2 text-white">${order.price}</p>
+                        <p className="mt-2 text-white">{order.price} DA</p>
                       </div>
 
                       <div>
@@ -219,7 +219,7 @@ export default function SellerOrdersPage() {
 
                     <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
                       <p className="text-sm text-gray-400">Gig Price Snapshot</p>
-                      <p className="mt-1 text-white">${order.gig.price}</p>
+                      <p className="mt-1 text-white">{order.gig.price} DA</p>
                     </div>
                   </div>
                 </div>

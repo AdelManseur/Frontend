@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Phone, MapPin, Edit, User, Tag } from "lucide-react";
+import Link from "next/link";
 import { getMe } from "../req-res";
 import type { UserProfile } from "../interfaces";
 
@@ -84,110 +85,116 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="border-b border-neutral-200 bg-neutral-50">
-        <div className="mx-auto max-w-5xl px-6 py-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between"
-          >
-            <div className="flex items-start gap-6">
-              <motion.img
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                src={user.pfp || "https://placehold.co/120x120/e5e7eb/1f2937?text=Profile"}
-                alt={user.name}
-                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
-              />
-
-              <div className="pt-1">
-                <div className="inline-block rounded-full bg-neutral-200 px-3 py-1 text-xs font-medium text-neutral-700 mb-3">
-                  {user.isSeller ? "Seller Profile" : "Buyer Profile"}
-                </div>
-                <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
-                  {user.name}
-                </h1>
-                <p className="mt-2 text-sm text-neutral-600">{user.email}</p>
-                {user.phone && <p className="mt-1 text-sm text-neutral-600">{user.phone}</p>}
-              </div>
-            </div>
-
-            <motion.a
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              href="/profile-details"
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-medium text-neutral-900 transition-all hover:border-neutral-400 hover:bg-neutral-100"
+      {/* Profile Header Card */}
+      <div className="mx-auto max-w-5xl px-6 pt-16 pb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[2.5rem] p-10 border border-neutral-100 shadow-xl shadow-neutral-100/50 flex flex-col md:flex-row items-center md:items-start justify-between gap-8"
+        >
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="relative"
             >
-              <Edit className="h-4 w-4" />
-              Edit profile
-            </motion.a>
-          </motion.div>
-        </div>
+              <img
+                src={user.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"}
+                alt={user.name}
+                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-md ring-1 ring-neutral-100"
+              />
+              <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+            </motion.div>
+
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-4">
+                {user.isSeller ? "Seller Profile" : "Buyer Profile"}
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight text-neutral-900 mb-2">
+                {user.name}
+              </h1>
+              <p className="text-neutral-500 font-medium">{user.email}</p>
+            </div>
+          </div>
+
+          <Link
+            href="/profile-details"
+            className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-neutral-800 active:scale-95 shadow-lg shadow-neutral-900/10"
+          >
+            <Edit className="h-4 w-4" />
+            Edit Profile
+          </Link>
+        </motion.div>
       </div>
 
-      {/* Content */}
-      <div className="mx-auto max-w-5xl px-6 py-12">
+      {/* Info Grid */}
+      <div className="mx-auto max-w-5xl px-6 pb-20 mt-8">
         <div className="grid gap-8 md:grid-cols-2">
-          {/* Basic Information */}
+          {/* Account Details */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="rounded-3xl border border-neutral-200 bg-white p-8"
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
-                <User className="h-5 w-5 text-neutral-900" />
-              </div>
-              <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
-                Basic Information
+            <div className="flex items-center gap-3 mb-8">
+              <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+                Account Details
               </h2>
             </div>
-            <div className="space-y-0">
-              <InfoRow label="Email" value={user.email} icon={Mail} />
-              <InfoRow label="Phone" value={user.phone} icon={Phone} />
+            <div className="space-y-1">
+              <InfoRow label="Email Address" value={user.email} icon={Mail} />
+              <InfoRow label="Phone Number" value={user.phone} icon={Phone} />
               <InfoRow
-                label="Birthday"
+                label="Date of Birth"
                 value={user.bday ? new Date(user.bday).toLocaleDateString() : ""}
+                icon={User}
               />
-              <InfoRow label="Address" value={fullAddress} icon={MapPin} />
             </div>
           </motion.section>
 
-          {/* Fields of Interest */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="rounded-3xl border border-neutral-200 bg-white p-8"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100">
-                <Tag className="h-5 w-5 text-neutral-900" />
+          {/* Location & Tags */}
+          <div className="space-y-8">
+            {/* Location */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
+            >
+              <h2 className="text-xl font-bold tracking-tight text-neutral-900 mb-6">Location</h2>
+              <InfoRow label="Address" value={fullAddress} icon={MapPin} />
+            </motion.section>
+
+            {/* Interests */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white rounded-3xl p-8 border border-neutral-100 shadow-sm"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+                  Interests
+                </h2>
               </div>
-              <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
-                Fields of Interest
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(user.fieldsOfInterest ?? []).length > 0 ? (
-                user.fieldsOfInterest?.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-900"
-                  >
-                    {item}
-                  </span>
-                ))
-              ) : (
-                <p className="text-sm text-neutral-500">No fields of interest added.</p>
-              )}
-            </div>
-          </motion.section>
+              <div className="flex flex-wrap gap-2">
+                {(user.fieldsOfInterest ?? []).length > 0 ? (
+                  user.fieldsOfInterest?.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-neutral-100 bg-neutral-50 px-4 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:bg-neutral-900 hover:text-white hover:border-neutral-900 cursor-default"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-sm text-neutral-400">No interests selected yet.</p>
+                )}
+              </div>
+            </motion.section>
+          </div>
         </div>
       </div>
     </main>

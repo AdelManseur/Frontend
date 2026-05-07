@@ -138,7 +138,7 @@ export default function ControlOrdersPage() {
                         <td>{o.buyerName || o.buyer._id || "-"}</td>
                         <td>{o.sellerName || o.seller._id || "-"}</td>
                         <td>{o.status}</td>
-                        <td>${Number(o.price || 0).toLocaleString()}</td>
+                        <td>{Number(o.price || 0).toLocaleString()} DA</td>
                         <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : "-"}</td>
                       </tr>
                     );

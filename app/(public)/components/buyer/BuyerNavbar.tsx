@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { Search, Bell, Mail, Heart } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
 
+import VerificationGate from "../ui/VerificationGate";
+
 interface BuyerNavbarProps {
   session: MeResponse | null;
-  setMode: (mode: "buyer" | "seller") => void;
 }
 
-export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
+export default function BuyerNavbar({ session }: BuyerNavbarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -39,23 +40,15 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
 
   return (
     <nav
-      className="sticky top-0 z-50 w-full"
-      style={{
-        background: "rgba(248, 250, 252, 0.75)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.8)",
-        boxShadow: "0 2px 24px rgba(124,58,237,0.06)",
-      }}
+      className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/80 backdrop-blur-xl shadow-sm"
     >
       {/* ── Top Row ── */}
       <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center gap-8">
 
         {/* Logo */}
         <Link href="/browse" className="flex-shrink-0">
-          <span className="text-[26px] font-extrabold tracking-tight" style={{ color: "var(--jm-text)" }}>
-            jobme
-            <span style={{ color: "var(--jm-violet)" }}>.</span>
+          <span className="text-2xl font-bold tracking-tighter text-neutral-900">
+            jobme.
           </span>
         </Link>
 
@@ -63,35 +56,20 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
         <div className="flex-1 max-w-2xl">
           <form
             onSubmit={handleSearch}
-            className="flex items-center w-full h-[44px] overflow-hidden"
-            style={{
-              background: "rgba(255,255,255,0.8)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.9)",
-              borderRadius: "999px",
-              boxShadow: "0 2px 16px rgba(124,58,237,0.08)",
-            }}
+            className="flex items-center w-full h-11 bg-neutral-100 border border-neutral-200 rounded-full"
           >
             <input
               type="text"
               placeholder="What service are you looking for today?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 h-full px-5 outline-none text-[14px] bg-transparent"
-              style={{ color: "var(--jm-text)" }}
+              className="flex-1 h-full px-5 outline-none text-sm bg-transparent text-neutral-900 placeholder:text-neutral-400"
             />
             <button
               type="submit"
-              className="h-full px-5 flex items-center justify-center flex-shrink-0 rounded-r-full"
-              style={{
-                background: "var(--jm-violet)",
-                borderTopRightRadius: "999px",
-                borderBottomRightRadius: "999px",
-                minWidth: "52px",
-              }}
+              className="h-full px-5 flex items-center justify-center flex-shrink-0 bg-neutral-900 rounded-r-full text-white hover:bg-neutral-800 transition-colors"
             >
-              <Search className="w-4 h-4 text-white" />
+              <Search className="w-4 h-4" />
             </button>
           </form>
         </div>
@@ -100,42 +78,50 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
         <div className="flex items-center gap-5 ml-auto flex-shrink-0">
           {user ? (
             <>
-              <div className="flex items-center gap-4" style={{ color: "var(--jm-muted)" }}>
-                <button className="relative hover:text-[#7C3AED] transition-colors">
+              <div className="flex items-center gap-4 text-neutral-400">
+                <button className="relative hover:text-neutral-900 transition-colors">
                   <Bell className="w-5 h-5" />
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#EC4899] rounded-full border-2 border-white/80" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                 </button>
-                <Link href="/chats" className="hover:text-[#7C3AED] transition-colors">
+                <Link href="/chats" className="hover:text-neutral-900 transition-colors">
                   <Mail className="w-5 h-5" />
                 </Link>
-                <Link href="/saved" className="hover:text-[#EC4899] transition-colors">
-                  <Heart className="w-5 h-5" />
+                <Link href="/saved" className="group hover:text-red-500 transition-colors">
+                  <Heart className="w-5 h-5 group-hover:fill-red-500" />
                 </Link>
               </div>
 
               <Link
                 href="/orders-to-buy"
-                className="text-[14px] font-semibold transition-colors"
-                style={{ color: "var(--jm-muted)" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--jm-text)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--jm-muted)")}
+                className="text-sm font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
               >
                 Orders
               </Link>
 
               {isSeller ? (
-                <button
-                  onClick={() => setMode("seller")}
-                  className="grad-btn px-4 py-2 text-[13px]"
-                  style={{ fontSize: "13px", padding: "6px 16px" }}
-                >
-                  Switch to Selling
-                </button>
+                user.idVerified ? (
+                  <button
+                    onClick={() => {
+                      window.localStorage.setItem("jobme.mode", "seller");
+                      router.push("/seller-dashboard");
+                    }}
+                    className="px-4 py-2 text-xs font-semibold rounded-full border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                  >
+                    Switch to Selling
+                  </button>
+                ) : (
+                  <VerificationGate isLocked={true}>
+                    <button
+                      className="px-4 py-2 text-xs font-semibold rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+                    >
+                      Become a Seller
+                    </button>
+                  </VerificationGate>
+                )
               ) : (
                 <Link
                   href="/become-a-seller"
-                  className="grad-btn px-4 py-2"
-                  style={{ fontSize: "13px", padding: "6px 16px", display: "inline-block", textAlign: "center", textDecoration: "none" }}
+                  className="px-4 py-2 text-xs font-semibold rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
                 >
                   Become a Seller
                 </Link>
@@ -144,15 +130,12 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
               {/* Avatar */}
               <Link
                 href="/profile"
-                className="block w-9 h-9 rounded-full overflow-hidden flex-shrink-0"
-                style={{
-                  border: "2px solid var(--jm-violet)",
-                }}
+                className="block w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-neutral-200 hover:border-neutral-900 transition-colors"
               >
                 <img
                   src={user.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"}
                   alt="Avatar"
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-cover"
                 />
               </Link>
             </>
@@ -160,12 +143,11 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
             <>
               <Link
                 href="/login"
-                className="text-[14px] font-semibold transition-colors"
-                style={{ color: "var(--jm-muted)" }}
+                className="text-sm font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
               >
                 Sign In
               </Link>
-              <Link href="/signup" className="grad-btn px-5 py-2 text-[14px]">
+              <Link href="/signup" className="px-5 py-2 rounded-full bg-neutral-900 text-white text-sm font-semibold hover:bg-neutral-800 transition-colors">
                 Join
               </Link>
             </>
@@ -173,22 +155,14 @@ export default function BuyerNavbar({ session, setMode }: BuyerNavbarProps) {
         </div>
       </div>
 
-      {/* ── Categories ── */}
-      <div style={{ borderTop: "1px solid rgba(124,58,237,0.08)" }}>
-        <div className="max-w-[1400px] mx-auto px-6 h-[40px] flex items-center overflow-x-auto no-scrollbar">
-          <ul className="flex items-center gap-7 whitespace-nowrap">
+      <div className="border-t border-neutral-100">
+        <div className="max-w-[1400px] mx-auto px-6 h-10 flex items-center overflow-x-auto no-scrollbar">
+          <ul className="flex items-center gap-8 whitespace-nowrap">
             {categories.map((cat, idx) => (
               <li key={idx}>
                 <Link
                   href={`/browse?category=${encodeURIComponent(cat.replace(" 🔥", ""))}`}
-                  className="text-[13px] font-medium pb-[9px] transition-all relative"
-                  style={{ color: "var(--jm-muted)" }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color = "var(--jm-violet)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color = "var(--jm-muted)";
-                  }}
+                  className="text-xs font-medium text-neutral-400 hover:text-neutral-900 transition-colors"
                 >
                   {cat}
                 </Link>

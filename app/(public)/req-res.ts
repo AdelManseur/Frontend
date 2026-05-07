@@ -123,3 +123,38 @@ export async function getEarningsData(): Promise<any> {
   
   return data.data;
 }
+
+export async function saveGig(gigId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/users/saved/${gigId}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to save gig");
+  }
+}
+
+export async function unsaveGig(gigId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/users/saved/${gigId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to unsave gig");
+  }
+}
+
+export async function getSavedGigs(): Promise<any[]> {
+  const res = await fetch(`${API_BASE_URL}/api/users/saved`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to fetch saved gigs");
+  }
+  const data = await res.json();
+  return data.savedGigs || [];
+}

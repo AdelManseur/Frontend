@@ -2,16 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Briefcase, DollarSign, Package, MessageSquare, ChevronDown, ChevronRight, Globe, ShoppingBag } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
 
 interface SellerSidebarProps {
   session: MeResponse | null;
-  setMode: (mode: "buyer" | "seller") => void;
 }
 
-export default function SellerSidebar({ session, setMode }: SellerSidebarProps) {
+export default function SellerSidebar({ session }: SellerSidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const user = session?.logged ? session.user : null;
 
@@ -172,7 +172,10 @@ export default function SellerSidebar({ session, setMode }: SellerSidebarProps) 
         <div style={{ height: "1px", background: "rgba(124,58,237,0.1)", margin: "8px 0" }} />
 
         <button
-          onClick={() => setMode("buyer")}
+          onClick={() => {
+            window.localStorage.setItem("jobme.mode", "buyer");
+            router.push("/browse");
+          }}
           className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-[13px] font-semibold transition-all"
           style={{
             background: "rgba(124,58,237,0.1)",

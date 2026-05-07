@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell, Mail, HelpCircle, Menu } from "lucide-react";
 import type { MeResponse } from "../../interfaces";
 
@@ -12,6 +13,7 @@ interface SellerTopBarProps {
 }
 
 export default function SellerTopBar({ session, title = "Dashboard", onMenuClick }: SellerTopBarProps) {
+  const router = useRouter();
   const user = session?.logged ? session.user : null;
 
   return (
@@ -65,6 +67,16 @@ export default function SellerTopBar({ session, title = "Dashboard", onMenuClick
             <HelpCircle className="w-5 h-5" />
           </button>
         </div>
+
+        <button
+          onClick={() => {
+            window.localStorage.setItem("jobme.mode", "buyer");
+            router.push("/browse");
+          }}
+          className="px-4 py-2 text-xs font-semibold rounded-full border border-white/20 text-white hover:bg-white/5 transition-colors"
+        >
+          Switch to Buying
+        </button>
 
         {user && (
           <Link href="/profile" className="relative block">

@@ -35,6 +35,7 @@ export default function ChatPage() {
   const [sendError, setSendError] = useState("");
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [isOtherOnline, setIsOtherOnline] = useState(false);
+  const [mode, setMode] = useState<"buyer" | "seller">("buyer");
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -55,6 +56,9 @@ export default function ChatPage() {
       setError("");
 
       try {
+        const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
+        if (savedMode) setMode(savedMode);
+
         const [me, other] = await Promise.all([
           getMe(),
           getSimpleUserDetails(otherId),
@@ -273,9 +277,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className={`flex flex-1 flex-col overflow-hidden ${mode === 'seller' ? '' : 'bg-white'}`}>
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.02] px-6 py-4">
+      <div className={`flex items-center gap-3 border-b px-6 py-4 ${mode === 'seller' ? 'border-white/10 bg-white/[0.02]' : 'border-neutral-200 bg-neutral-50'}`}>
         <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-bold text-indigo-300">
           {otherUser?.pfp ? (
             <img src={otherUser.pfp} alt={otherUser.name} className="h-full w-full rounded-full object-cover" />
@@ -284,11 +288,11 @@ export default function ChatPage() {
           )}
           {/* Online indicator */}
           {isOtherOnline && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0b1220]" />
+            <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ${mode === 'seller' ? 'ring-[#0b1220]' : 'ring-white'}`} />
           )}
         </div>
         <div>
-          <p className="font-semibold text-white">{otherUser?.name || "User"}</p>
+          <p className={`font-semibold ${mode === 'seller' ? 'text-white' : 'text-neutral-900'}`}>{otherUser?.name || "User"}</p>
           <p className="text-xs text-gray-500">
             {isOtherTyping ? (
               <span className="text-indigo-400 animate-pulse">typing...</span>
@@ -313,9 +317,9 @@ export default function ChatPage() {
             {groupedMessages.map((group) => (
               <div key={group.date}>
                 <div className="my-4 flex items-center gap-3">
-                  <div className="flex-1 border-t border-white/10" />
-                  <span className="text-xs text-gray-600">{formatDate(group.messages[0].createdAt)}</span>
-                  <div className="flex-1 border-t border-white/10" />
+                  <div className={`flex-1 border-t ${mode === 'seller' ? 'border-white/10' : 'border-neutral-100'}`} />
+                  <span className={`text-xs ${mode === 'seller' ? 'text-gray-600' : 'text-neutral-400'}`}>{formatDate(group.messages[0].createdAt)}</span>
+                  <div className={`flex-1 border-t ${mode === 'seller' ? 'border-white/10' : 'border-neutral-100'}`} />
                 </div>
 
                 {group.messages.map((m, idx) => {
@@ -332,8 +336,8 @@ export default function ChatPage() {
                         <div
                           className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                             mine
-                              ? "rounded-br-sm bg-indigo-500 text-white"
-                              : "rounded-bl-sm bg-white/[0.08] text-gray-200"
+                              ? (mode === 'seller' ? "rounded-br-sm bg-indigo-500 text-white" : "rounded-br-sm bg-neutral-900 text-white")
+                              : (mode === 'seller' ? "rounded-bl-sm bg-white/[0.08] text-gray-200" : "rounded-bl-sm bg-neutral-100 text-neutral-900")
                           }`}
                         >
                           {m.content}
@@ -354,7 +358,7 @@ export default function ChatPage() {
             {/* Typing indicator bubble */}
             {isOtherTyping && (
               <div className="mt-3 flex justify-start">
-                <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white/[0.08] px-4 py-3">
+                <div className={`flex items-center gap-1 rounded-2xl rounded-bl-sm px-4 py-3 ${mode === 'seller' ? 'bg-white/[0.08]' : 'bg-neutral-100'}`}>
                   <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0ms]" />
                   <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
                   <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
@@ -368,7 +372,7 @@ export default function ChatPage() {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-white/10 bg-white/[0.02] px-6 py-4">
+      <div className={`border-t px-6 py-4 ${mode === 'seller' ? 'border-white/10 bg-white/[0.02]' : 'border-neutral-200 bg-neutral-50'}`}>
         {sendError && <p className="mb-2 text-xs text-red-400">{sendError}</p>}
         <form onSubmit={onSend} className="flex items-center gap-3">
           <input
@@ -376,12 +380,18 @@ export default function ChatPage() {
             value={draft}
             onChange={onDraftChange}
             placeholder="Type a message..."
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition"
+            className={`flex-1 rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-1 ${
+              mode === 'seller' 
+                ? 'border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-indigo-500 focus:ring-indigo-500/50' 
+                : 'border-neutral-200 bg-white text-neutral-900 placeholder-neutral-400 focus:border-neutral-900 focus:ring-neutral-900/20'
+            }`}
           />
           <button
             type="submit"
             disabled={sending || !draft.trim()}
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-400 disabled:opacity-40"
+            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 ${
+              mode === 'seller' ? 'bg-indigo-500 text-white hover:bg-indigo-400' : 'bg-neutral-900 text-white hover:bg-neutral-800'
+            }`}
           >
             {sending ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

@@ -9,10 +9,9 @@ import type { MeResponse } from "../../interfaces";
 interface SellerShellProps {
   children: React.ReactNode;
   session: MeResponse | null;
-  setMode: (mode: "buyer" | "seller") => void;
 }
 
-export default function SellerShell({ children, session, setMode }: SellerShellProps) {
+export default function SellerShell({ children, session }: SellerShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -31,7 +30,7 @@ export default function SellerShell({ children, session, setMode }: SellerShellP
 
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <SellerSidebar session={session} setMode={setMode} />
+        <SellerSidebar session={session} />
       </div>
 
       {/* Main Content Area */}

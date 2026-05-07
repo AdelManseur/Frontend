@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, ChevronRight, Star, Check, Play, Menu, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import Image from 'next/image';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -57,8 +57,15 @@ async function fetchGigs(params: Record<string, string | number>): Promise<GigsR
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLogged, setIsLogged] = useState(false);
 
   useEffect(() => {
+    import('./req-res').then(({ getMe }) => {
+      getMe().then(me => {
+        if (me?.logged) setIsLogged(true);
+      });
+    });
+
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -69,7 +76,7 @@ const Navbar = () => {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as any }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${
           scrolled
             ? 'bg-white/80 backdrop-blur-2xl border-neutral-200/50 py-4 shadow-sm'
@@ -96,24 +103,39 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/login"
-              className={`text-sm font-medium transition-colors ${
-                scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/80 hover:text-white'
-              }`}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
-                scrolled
-                  ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                  : 'bg-white text-neutral-900 hover:bg-neutral-100'
-              }`}
-            >
-              Join JobMe
-            </Link>
+            {isLogged ? (
+              <Link
+                href="/browse"
+                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
+                  scrolled
+                    ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                    : 'bg-white text-neutral-900 hover:bg-neutral-100'
+                }`}
+              >
+                Go to Browse
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={`text-sm font-medium transition-colors ${
+                    scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${
+                    scrolled
+                      ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                      : 'bg-white text-neutral-900 hover:bg-neutral-100'
+                  }`}
+                >
+                  Join JobMe
+                </Link>
+              </>
+            )}
           </div>
           <button className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
             <Menu className={`w-6 h-6 ${scrolled ? 'text-neutral-900' : 'text-white'}`} />
@@ -141,8 +163,14 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="h-px bg-neutral-100 my-4" />
-              <Link href="/login" className="text-xl font-medium text-neutral-500">Sign In</Link>
-              <Link href="/signup" className="text-xl font-medium text-neutral-900">Join JobMe</Link>
+              {isLogged ? (
+                <Link href="/browse" className="text-xl font-medium text-neutral-900">Go to Browse</Link>
+              ) : (
+                <>
+                  <Link href="/login" className="text-xl font-medium text-neutral-500">Sign In</Link>
+                  <Link href="/signup" className="text-xl font-medium text-neutral-900">Join JobMe</Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -191,7 +219,7 @@ const Footer = () => (
 );
 
 // ─── Gig Card ─────────────────────────────────────────────────────────────────
-const GigCard = ({ gig, variants }: { gig: Gig; variants: object }) => {
+const GigCard = ({ gig, variants }: { gig: Gig; variants: Variants }) => {
   const image = gig.images?.[0];
   const price = gig.price?.basic?.price;
   const sellerName = gig.seller?.name ?? 'Seller';
@@ -244,7 +272,7 @@ const GigCard = ({ gig, variants }: { gig: Gig; variants: object }) => {
             )}
           </div>
           {price != null && (
-            <span className="text-lg font-bold tracking-tight text-neutral-900">${price}</span>
+            <span className="text-lg font-bold tracking-tight text-neutral-900">{price} DA</span>
           )}
         </div>
       </div>
@@ -271,8 +299,8 @@ const SearchResults = ({
   pagination: GigsResponse['pagination'] | null;
   onLoadMore: () => void;
   onClear: () => void;
-  variants: object;
-  staggerContainer: object;
+  variants: Variants;
+  staggerContainer: Variants;
 }) => (
   <section className="py-20 px-6 max-w-7xl mx-auto">
     <div className="flex items-end justify-between mb-10">
@@ -415,12 +443,19 @@ export default function HomePage() {
 
   const trustedCompanies = ['Meta', 'Google', 'Netflix', 'P&G', 'PayPal'];
 
-  const fadeUpVariant = {
+  const fadeUpVariant: Variants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        duration: 0.6, 
+        ease: [0.22, 1, 0.36, 1] as any
+      } 
+    }
   };
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
@@ -442,7 +477,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any, delay: 0.2 }}
             className="max-w-3xl"
           >
             <h1 className="text-5xl sm:text-6xl md:text-8xl font-semibold tracking-tighter text-white mb-8 leading-[1.05]">
@@ -593,12 +628,12 @@ export default function HomePage() {
       </section>
 
       {/* Value Proposition */}
-      <section className="py-32 px-6 bg-neutral-950 text-white selection:bg-white selection:text-neutral-900">
+      <section className="py-32 px-6 bg-white border-y border-neutral-100">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 md:gap-24 items-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={staggerContainer}>
-            <motion.p variants={fadeUpVariant} className="text-sm font-semibold tracking-widest uppercase text-neutral-500 mb-6">A whole world of talent</motion.p>
-            <motion.h2 variants={fadeUpVariant} className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-white mb-10 leading-[1.05]">
-              Break down <br /><span className="text-neutral-500 font-light">every barrier.</span>
+            <motion.p variants={fadeUpVariant} className="text-sm font-semibold tracking-widest uppercase text-neutral-400 mb-6">A whole world of talent</motion.p>
+            <motion.h2 variants={fadeUpVariant} className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-neutral-900 mb-10 leading-[1.05]">
+              Break down <br /><span className="text-neutral-400 font-light">every barrier.</span>
             </motion.h2>
             <motion.ul variants={staggerContainer} className="space-y-6">
               {[
@@ -608,15 +643,15 @@ export default function HomePage() {
                 'Secure milestone-based payments and guarantees.',
               ].map((item) => (
                 <motion.li variants={fadeUpVariant} key={item} className="flex items-start gap-5 group">
-                  <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-1 transition-colors group-hover:bg-white/20">
-                    <Check className="w-3.5 h-3.5 text-white" />
+                  <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0 mt-1 transition-colors group-hover:bg-neutral-900 group-hover:text-white">
+                    <Check className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-xl text-neutral-400 font-light leading-relaxed group-hover:text-neutral-200 transition-colors">{item}</span>
+                  <span className="text-xl text-neutral-500 font-light leading-relaxed group-hover:text-neutral-900 transition-colors">{item}</span>
                 </motion.li>
               ))}
             </motion.ul>
-            <motion.button variants={fadeUpVariant} className="mt-12 px-8 py-4 bg-white text-neutral-900 rounded-full font-medium hover:bg-neutral-200 transition-colors inline-flex items-center gap-3 active:scale-95">
-              <Play className="w-4 h-4 fill-neutral-900" />
+            <motion.button variants={fadeUpVariant} className="mt-12 px-8 py-4 bg-neutral-900 text-white rounded-full font-medium hover:bg-neutral-800 transition-colors inline-flex items-center gap-3 active:scale-95 shadow-lg shadow-neutral-900/10">
+              <Play className="w-4 h-4 fill-white" />
               <span>Watch the story</span>
             </motion.button>
           </motion.div>
@@ -624,15 +659,15 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
             viewport={{ once: true }}
-            className="relative aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-neutral-900 border border-white/10"
+            className="relative aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-neutral-100 border border-neutral-100"
           >
             <Image
               src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&h=1000&fit=crop"
               alt="Working together"
               fill
-              className="object-cover opacity-90 transition-transform duration-1000 hover:scale-105"
+              className="object-cover transition-transform duration-1000 hover:scale-105"
             />
           </motion.div>
         </div>
@@ -673,7 +708,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
           viewport={{ once: true }}
           className="bg-neutral-100 rounded-[3rem] p-12 md:p-24 grid md:grid-cols-2 gap-16 items-center overflow-hidden relative group"
         >

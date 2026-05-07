@@ -115,7 +115,7 @@ export default function CreateGigPage() {
       if (!formData.title.trim()) throw new Error('Please enter a gig title.');
       if (!formData.category) throw new Error('Please select a category.');
       if (!formData.price.basic.price || Number(formData.price.basic.price) < 5)
-        throw new Error('Basic package price must be at least $5.');
+        throw new Error('Basic package price must be at least 5 DA.');
       if (!basicDays || basicDays < 1 || basicDays > 30)
         throw new Error('Basic package delivery time must be between 1 and 30 days.');
       if (!formData.images.length) throw new Error('Please add at least one image URL.');
@@ -343,7 +343,7 @@ export default function CreateGigPage() {
                           className="w-full bg-transparent border-b border-neutral-200 py-2 focus:outline-none focus:border-neutral-900 text-sm text-neutral-600 resize-none h-20"
                         />
                         <div className="flex items-center gap-2 border-b border-neutral-200 py-2 focus-within:border-neutral-900">
-                          <span className="text-neutral-500">$</span>
+                          <span className="text-neutral-500">DA</span>
                           <input
                             type="number"
                             placeholder="Price"

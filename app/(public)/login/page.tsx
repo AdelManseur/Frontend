@@ -43,9 +43,7 @@ export default function LoginPage() {
       });
 
       setSuccess(result.message || "Logged in successfully");
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
+      router.push("/");
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Unexpected error";
       setError(message);

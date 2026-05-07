@@ -9,7 +9,7 @@ import ResourcesCarousel from "../components/seller/dashboard/ResourcesCarousel"
 import { PerformanceWidget, ProfileStrengthWidget, FeedbackWidget } from "../components/seller/dashboard/Widgets";
 import { getMe, getSellerDashboardStats } from "../req-res";
 import type { MeResponse } from "../interfaces";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function SellerDashboardPage() {
@@ -73,13 +73,13 @@ export default function SellerDashboardPage() {
   return (
     <div className="font-sans pb-12 text-white">
       {/* Verification Banner */}
-      {session?.user && !session.user.idVerified && (
+      {session?.logged && session.user && !session.user.idVerified && (
         <div className="mb-6 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(239,68,68,0.35)" }}>
           <div className="flex items-center justify-between gap-4 px-5 py-4" style={{ background: "rgba(239,68,68,0.08)" }}>
             <div className="flex items-center gap-3">
-              <span className="text-2xl flex-shrink-0">🔒</span>
+              <ShieldCheck className="w-6 h-6 text-red-400" />
               <div>
-                <p className="text-[14px] font-bold text-white">Buying &amp; Selling Locked</p>
+                <p className="text-[14px] font-bold text-white">Verification Required</p>
                 <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.6)" }}>
                   You must verify your identity via the <strong className="text-white">JobMe mobile app</strong> to create gigs or place orders.
                 </p>
@@ -87,10 +87,11 @@ export default function SellerDashboardPage() {
             </div>
             <a
               href="/verify-identity"
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-[13px] text-white transition-all hover:brightness-110"
-              style={{ background: "rgba(239,68,68,0.5)", border: "1px solid rgba(239,68,68,0.4)" }}
+              className="flex-shrink-0 flex items-center gap-2 px-5 py-2 rounded-full font-bold text-[13px] text-white transition-all hover:brightness-110"
+              style={{ background: "#7C3AED", border: "1px solid rgba(124,58,237,0.4)" }}
             >
-              📱 Get the App
+              <Smartphone className="w-4 h-4" />
+              Verify Identity
             </a>
           </div>
         </div>

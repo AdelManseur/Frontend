@@ -16,6 +16,7 @@ export interface UserProfile {
   createdAt?: string;
   updatedAt?: string;
   isSeller?: boolean;
+  idVerified?: boolean;
   fieldsOfInterest?: string[];
 }
 

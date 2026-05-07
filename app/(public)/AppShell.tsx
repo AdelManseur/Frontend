@@ -13,7 +13,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const [session, setSession] = useState<MeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Determine mode dynamically from route
+  const sellerRoutes = ["/seller-dashboard", "/your-gigs", "/orders-to-sell", "/earnings"];
+  const isSellerRoute = sellerRoutes.some((route) => pathname?.startsWith(route));
+  
+  // For /chats, we use the saved mode in localStorage if available
   const [mode, setMode] = useState<"buyer" | "seller">("buyer");
+
+  useEffect(() => {
+    const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
+    if (isSellerRoute) {
+      setMode("seller");
+    } else if (pathname?.startsWith("/chats")) {
+      setMode(savedMode === "seller" ? "seller" : "buyer");
+    } else {
+      setMode("buyer");
+    }
+  }, [pathname, isSellerRoute]);
 
   useEffect(() => {
     let mounted = true;
@@ -29,16 +46,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setSession(me);
           
-          // Determine initial mode based on localStorage and seller status
-          const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
-          const isSeller = me.logged && me.user.isSeller;
-          
-          const newMode = savedMode === "seller" && isSeller ? "seller" : "buyer";
-          setMode(newMode);
-
           // Redirect logged-in users away from the public marketing homepage
-          if (pathname === "/") {
-            router.replace(newMode === "seller" ? "/seller-dashboard" : "/browse");
+          if (me.logged && pathname === "/") {
+            // Check localStorage to decide where to land initially, but don't force mode globally
+            const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
+            const isSeller = me.logged && me.user.isSeller;
+            const landingMode = savedMode === "seller" && isSeller ? "seller" : "buyer";
+            router.replace(landingMode === "seller" ? "/seller-dashboard" : "/browse");
           }
         }
       } catch (err) {
@@ -53,10 +67,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [pathname]);
 
-  useEffect(() => {
-    window.localStorage.setItem("jobme.mode", mode);
-  }, [mode]);
-
   if (isLoading) return (
     <main
       className="min-h-screen grid place-items-center"
@@ -64,37 +74,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     >
       <div className="flex flex-col items-center gap-4">
         <span
-          className="text-4xl font-extrabold tracking-tight"
-          style={{
-            color: "var(--jm-violet)",
-            animation: "pulse 1.5s ease-in-out infinite",
-          }}
+          className="text-4xl font-extrabold tracking-tighter text-neutral-900 animate-pulse"
         >
-          jobme<span style={{ opacity: 0.7 }}>.</span>
+          jobme.
         </span>
         <div
-          className="w-8 h-1 rounded-full"
-          style={{
-            background: "var(--jm-violet)",
-            animation: "pulse 1.5s ease-in-out infinite",
-          }}
+          className="w-8 h-1 rounded-full bg-neutral-900 animate-pulse"
         />
       </div>
     </main>
   );
 
-  
+  const rawPages = ["/", "/login", "/signup", "/verify-otp"];
+  if (rawPages.includes(pathname || "")) {
+    return <>{children}</>;
+  }
+
   if (!session?.logged) {
-    const rawPages = ["/", "/login", "/signup", "/verify-otp"];
-    if (rawPages.includes(pathname)) {
-      return <>{children}</>;
-    }
-    return <BuyerShell session={null} setMode={setMode}>{children}</BuyerShell>;
+    return <BuyerShell session={null}>{children}</BuyerShell>;
   }
 
   if (mode === "seller") {
-    return <SellerShell session={session} setMode={setMode}>{children}</SellerShell>;
+    return <SellerShell session={session}>{children}</SellerShell>;
   }
 
-  return <BuyerShell session={session} setMode={setMode}>{children}</BuyerShell>;
+  return <BuyerShell session={session}>{children}</BuyerShell>;
 }

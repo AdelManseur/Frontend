@@ -137,7 +137,7 @@ export default function UserChatLayout({ children }: { children: React.ReactNode
                       )}
                     </div>
                     {order.price !== undefined && (
-                      <p className="text-indigo-400">${order.price}</p>
+                      <p className="text-indigo-400">{order.price} DA</p>
                     )}
                   </Link>
                 );

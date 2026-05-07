@@ -91,7 +91,7 @@ export default function YourGigsPage() {
                       </span>
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] uppercase text-gray-500">Starting at</span>
-                        <span className="font-semibold text-indigo-300">${gig.price.basic.price}</span>
+                        <span className="font-semibold text-indigo-300">{gig.price.basic.price} DA</span>
                       </div>
                     </div>
 
