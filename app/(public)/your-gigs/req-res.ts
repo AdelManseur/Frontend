@@ -29,3 +29,17 @@ export async function getMyGigs(sellerId: string): Promise<SellerGig[]> {
 
   return normalizeGigs(data);
 }
+
+export async function updateGig(gigId: string, payload: any): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/gigs/${encodeURIComponent(gigId)}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to update gig.");
+  }
+}

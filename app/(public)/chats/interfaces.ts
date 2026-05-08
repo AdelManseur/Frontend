@@ -22,6 +22,7 @@ export type ConversationRaw =
       id?: string;
       user1Id?: string | PublicUserLite;
       user2Id?: string | PublicUserLite;
+      gigId?: string;
       createdAt?: string;
     };
 
@@ -32,5 +33,7 @@ export interface GetConversationsResponse {
 export interface SellerConversationListItem {
   convId: string;
   otherUser: SimpleUserDetails;
+  gigId?: string;
+  orderId?: string;
   createdAt?: string;
 }

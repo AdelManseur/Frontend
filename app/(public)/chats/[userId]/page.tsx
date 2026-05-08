@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { getMe } from "@/app/(public)/req-res";
 import {
@@ -10,6 +10,9 @@ import {
   markMessageAsRead,
   sendChatMessage,
   getOrdersBetweenSellerBuyer,
+  getSpecificConversation,
+  ensureConversation,
+  getGigOwner,
 } from "./req-res";
 import type { ChatMessage, SimpleUserDetails, ProjectOrderSummary } from "./interfaces";
 import { API_BASE_URL } from "@/lib/api-config";
@@ -60,6 +63,12 @@ export default function ChatPage() {
   const [reportSent, setReportSent] = useState(false);
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [initiatorId, setInitiatorId] = useState("");
+  const [isGigOwner, setIsGigOwner] = useState(false);
+  
+  const searchParams = useSearchParams();
+  const gigId = searchParams?.get("gigId") || "";
+  const orderId = searchParams?.get("orderId") || "";
 
   // Custom offer form (seller only)
   const [showOfferForm, setShowOfferForm] = useState(false);
@@ -96,11 +105,25 @@ export default function ChatPage() {
         myIdRef.current = currentId;
         setOtherUser(other);
 
-        const rows = await getMessagesBetween(currentId, otherId);
+        // Check gig ownership when gigId is present in the URL
+        if (gigId) {
+          const ownerId = await getGigOwner(gigId);
+          if (mounted) setIsGigOwner(!!ownerId && ownerId === currentId);
+        }
+
+        const rows = await getMessagesBetween(currentId, otherId, gigId, orderId);
         if (!mounted) return;
 
         const sorted = [...rows].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         setMessages(sorted);
+
+        // Fetch or Create specific conversation to get initiatorId and ensure it exists in the list
+        try {
+          const conv = await ensureConversation(currentId, otherId, gigId, orderId);
+          if (mounted && conv) setInitiatorId(conv.initiatorId);
+        } catch (convErr) {
+          console.warn("Could not ensure conversation:", convErr);
+        }
 
         const lastIncoming = [...sorted].filter(m => m.from === otherId && !m.read)
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
@@ -177,7 +200,7 @@ export default function ChatPage() {
     socketRef.current?.emit("stopTyping", { to: otherId, from: myId });
     setSending(true);
     try {
-      const sent = await sendChatMessage({ from: myId, to: otherId, content });
+      const sent = await sendChatMessage({ from: myId, to: otherId, content, gigId, orderId });
       setMessages(prev => prev.some(m => m._id === sent._id) ? prev : [...prev, sent]);
       setDraft("");
       textareaRef.current?.focus();
@@ -227,7 +250,7 @@ export default function ChatPage() {
       const res = await fetch(`${base}/chat/offer`, {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ buyerId: otherId, title, description, price: Number(price), deliveryTime: Number(deliveryTime), revisions: Number(revisions) }),
+        body: JSON.stringify({ buyerId: otherId, title, description, price: Number(price), deliveryTime: Number(deliveryTime), revisions: Number(revisions), gigId }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) { setOfferError(data?.error || `Failed (${res.status})`); return; }
@@ -277,11 +300,11 @@ export default function ChatPage() {
   const isSeller = mode === "seller";
 
   // Color palette
-  const pageBg    = isSeller ? "bg-[#080d16]" : "bg-[#f0f2f5]";
-  const headerBg  = isSeller ? "bg-[#0d1117] border-white/[0.07]" : "bg-white border-neutral-200";
-  const composerBg = isSeller ? "bg-[#0d1117] border-white/[0.07]" : "bg-white border-neutral-200";
-  const myBubble  = isSeller ? "bg-indigo-600 text-white" : "bg-[#0084ff] text-white";
-  const theirBubble = isSeller ? "bg-white/[0.1] text-white" : "bg-white text-neutral-900";
+  const pageBg    = isSeller ? "bg-transparent" : "bg-[#f0f2f5]";
+  const headerBg  = isSeller ? "bg-[#0D0D1A]/40 backdrop-blur-md border-b border-white/[0.05]" : "bg-white border-neutral-200";
+  const composerBg = isSeller ? "bg-[#0D0D1A]/40 backdrop-blur-md border-t border-white/[0.05]" : "bg-white border-neutral-200";
+  const myBubble  = isSeller ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-[#0084ff] text-white";
+  const theirBubble = isSeller ? "bg-white/[0.06] text-white backdrop-blur-sm border border-white/[0.03]" : "bg-white text-neutral-900";
   const textPrimary = isSeller ? "text-white" : "text-neutral-900";
   const textMuted   = isSeller ? "text-white/40" : "text-neutral-500";
   const avatarBg  = isSeller ? { background: "rgba(99,102,241,0.25)", color: "#818cf8" } : { background: "#e5e7eb", color: "#374151" };
@@ -340,8 +363,8 @@ export default function ChatPage() {
 
         {/* Actions */}
         <div className="relative flex items-center gap-2">
-          {/* Seller-only: Send Custom Offer */}
-          {isSeller && (
+          {/* Seller-only: Send Custom Offer. Only shown when the current user owns the gig in the URL. */}
+          {isSeller && isGigOwner && myId !== initiatorId && (
             <button
               onClick={() => { setShowOfferForm(true); setOfferError(""); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-semibold transition bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/20"

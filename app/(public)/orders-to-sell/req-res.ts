@@ -13,30 +13,42 @@ export async function getSellerOrders(
   params: GetSellerOrdersParams = {}
 ): Promise<SellerOrdersResponse> {
   const query = new URLSearchParams();
-
   if (params.status) query.set("status", params.status);
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
 
-  const url = `${API_BASE}/simpleorders/seller${query.toString() ? `?${query}` : ""}`;
+  const queryStr = query.toString() ? `?${query}` : "";
 
-  const res = await fetch(url, {
-    method: "GET",
-    credentials: "include",
-  });
+  // Fetch both types of orders
+  const [simpleRes, regularRes] = await Promise.all([
+    fetch(`${API_BASE}/simpleorders/seller${queryStr}`, { method: "GET", credentials: "include" }),
+    fetch(`${API_BASE}/orders/seller${queryStr}`, { method: "GET", credentials: "include" }),
+  ]);
 
-  const data = await res.json().catch(() => null);
+  const simpleData = await simpleRes.json().catch(() => null);
+  const regularData = await regularRes.json().catch(() => null);
 
-  if (!res.ok) {
-    throw new Error(data?.message || data?.error || `Failed to load seller orders (${res.status})`);
-  }
+  const simpleOrders = Array.isArray(simpleData?.orders) ? simpleData.orders : [];
+  const regularOrders = Array.isArray(regularData?.orders) ? regularData.orders.map((o: any) => ({
+    ...o,
+    price: o.totalAmount ?? o.price,
+    isRegular: true
+  })) : [];
+
+  // Merge and sort by date
+  const allOrders = [...simpleOrders, ...regularOrders].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const totalCount = (simpleData?.pagination?.totalCount ?? 0) + (regularData?.pagination?.totalCount ?? 0);
+  const totalPages = Math.max(simpleData?.pagination?.totalPages ?? 1, regularData?.pagination?.totalPages ?? 1);
 
   return {
-    orders: Array.isArray(data?.orders) ? data.orders : [],
+    orders: allOrders,
     pagination: {
-      currentPage: Number(data?.pagination?.currentPage ?? 1),
-      totalPages: Number(data?.pagination?.totalPages ?? 1),
-      totalCount: Number(data?.pagination?.totalCount ?? 0),
+      currentPage: Number(params.page ?? 1),
+      totalPages,
+      totalCount,
     },
   };
 }

@@ -43,19 +43,47 @@ export function PerformanceWidget({ stats }: { stats?: any }) {
   );
 }
 
-export function ProfileStrengthWidget() {
+export function ProfileStrengthWidget({ user }: { user?: any }) {
+  const calculateStrength = () => {
+    if (!user) return { score: 0, total: 12, percent: 0 };
+    
+    let score = 0;
+    const total = 12;
+
+    if (user.name) score++;
+    if (user.email) score++;
+    if (user.phone) score++;
+    if (user.bday) score++;
+    if (user.pfp) score++;
+    if (user.address?.street) score++;
+    if (user.address?.city) score++;
+    if (user.address?.postalCode) score++;
+    if (user.address?.country) score++;
+    if (user.idVerified) score++;
+    if (user.fieldsOfInterest && user.fieldsOfInterest.length > 0) score++;
+    if (user.isSeller) score++;
+
+    return {
+      score,
+      total,
+      percent: Math.round((score / total) * 100)
+    };
+  };
+
+  const { score, total, percent } = calculateStrength();
+
   return (
     <div className="glass-card-dark mb-6 overflow-hidden">
       <div className="p-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-bold text-white">Profile Strength</h2>
           <div className="text-right">
-            <span className="text-2xl font-bold text-white">8</span>
-            <span className="text-[14px] font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>/12</span>
+            <span className="text-2xl font-bold text-white">{score}</span>
+            <span className="text-[14px] font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>/{total}</span>
           </div>
         </div>
         
-        <ProgressBar progress={66} className="mb-4" />
+        <ProgressBar progress={percent} className="mb-4" />
         
         <p className="text-[14px] mb-5" style={{ color: "rgba(255,255,255,0.6)" }}>
           A strong profile helps you stand out and attracts more buyers. Add your portfolio and certifications!

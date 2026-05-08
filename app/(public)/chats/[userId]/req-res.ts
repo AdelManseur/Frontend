@@ -1,4 +1,21 @@
 import { API_BASE_URL } from "@/lib/api-config";
+
+export async function getGigOwner(gigId: string): Promise<string | null> {
+  try {
+    const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
+    const res = await fetch(`${base}/gigs/${encodeURIComponent(gigId)}`, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    // Handle both { seller: { _id } } and { gig: { seller: { _id } } } shapes
+    const gig = data?.gig ?? data?.data ?? data;
+    return String(gig?.seller?._id ?? "") || null;
+  } catch {
+    return null;
+  }
+}
 import type {
   ChatMessage,
   GetMessagesResponse,
@@ -17,8 +34,11 @@ async function parseJson<T>(res: Response): Promise<T | null> {
   }
 }
 
-export async function getMessagesBetween(userId1: string, userId2: string): Promise<ChatMessage[]> {
-  const url = `${API_BASE}/chat/messages?userId1=${encodeURIComponent(userId1)}&userId2=${encodeURIComponent(userId2)}`;
+export async function getMessagesBetween(userId1: string, userId2: string, gigId?: string, orderId?: string): Promise<ChatMessage[]> {
+  let url = `${API_BASE}/chat/messages?userId1=${encodeURIComponent(userId1)}&userId2=${encodeURIComponent(userId2)}`;
+  if (orderId) url += `&orderId=${encodeURIComponent(orderId)}`;
+  else if (gigId) url += `&gigId=${encodeURIComponent(gigId)}`;
+
   const res = await fetch(url, { method: "GET", credentials: "include" });
   const data = await parseJson<GetMessagesResponse>(res);
 
@@ -31,6 +51,8 @@ export async function getMessagesBetween(userId1: string, userId2: string): Prom
     content: String(m?.content ?? ""),
     createdAt: String(m?.createdAt ?? new Date().toISOString()),
     read: Boolean(m?.read),
+    gigId: m?.gigId,
+    orderId: m?.orderId,
   }));
 }
 
@@ -110,6 +132,7 @@ type SendMessagePayload = {
   from: string;
   to: string;
   content: string;
+  gigId?: string;
 };
 
 type SendMessageResponse = {
@@ -164,3 +187,32 @@ export async function markMessageAsRead(messageId: string): Promise<MarkMessageR
 
   return data;
 }
+
+export async function getSpecificConversation(
+  userId1: string,
+  userId2: string,
+  gigId?: string,
+  orderId?: string
+): Promise<any> {
+  let url = `${API_BASE}/chat/specific-conv?userId1=${encodeURIComponent(userId1)}&userId2=${encodeURIComponent(userId2)}`;
+  if (orderId) url += `&orderId=${encodeURIComponent(orderId)}`;
+  else if (gigId) url += `&gigId=${encodeURIComponent(gigId)}`;
+
+  const res = await fetch(url, { method: "GET", credentials: "include" });
+  const data = await parseJson<any>(res);
+  if (!res.ok) throw new Error(data?.error || `Failed to fetch conversation (${res.status})`);
+  return data.conversation;
+}
+
+export async function ensureConversation(user1Id: string, user2Id: string, gigId?: string, orderId?: string): Promise<any> {
+  const url = `${API_BASE}/chat/conv`;
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user1Id, user2Id, gigId, orderId }),
+  });
+  const data = await parseJson<any>(res);
+  if (!res.ok) throw new Error(data?.error || `Failed to ensure conversation (${res.status})`);
+  return data.conversation;
+}

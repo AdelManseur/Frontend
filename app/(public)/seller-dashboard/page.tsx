@@ -113,7 +113,7 @@ export default function SellerDashboardPage() {
         
         {/* Right Sidebar Column */}
         <div className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-6">
-          <ProfileStrengthWidget />
+          <ProfileStrengthWidget user={session?.user} />
           <PerformanceWidget stats={dashboardData.performance} />
           <FeedbackWidget />
         </div>

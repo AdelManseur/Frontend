@@ -107,11 +107,14 @@ export default function BuyerGigExpandedPage() {
       if (!me.logged) throw new Error("You must be logged in.");
       const sellerId = resolveSellerId(gig);
       if (!sellerId) throw new Error("Seller ID not found.");
-      await ensureConversationExists(sellerId, me.user._id);
-      const result = await sendMessageToSeller({ from: me.user._id, to: sellerId, content });
+      await ensureConversationExists(sellerId, me.user._id, gig._id);
+      const result = await sendMessageToSeller({ from: me.user._id, to: sellerId, content, gigId: gig._id });
       setSuccess(result.message || "Message sent.");
       setContactMessage("");
       setShowContactBox(false);
+      
+      // Redirect to the newly created per-gig chat
+      setTimeout(() => router.push(`/chats/${sellerId}?gigId=${gig._id}`), 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message.");
     } finally {
@@ -222,7 +225,7 @@ export default function BuyerGigExpandedPage() {
                     onClick={() => setShowFaqForm(true)}
                     className="mt-8 w-full rounded-full bg-neutral-900 py-3.5 text-sm font-bold text-white transition hover:bg-neutral-800 active:scale-95"
                   >
-                    Continue (${currentPackage.price})
+                    Continue ({currentPackage.price} DA)
                   </button>
                 </>
               )}
@@ -255,12 +258,12 @@ export default function BuyerGigExpandedPage() {
 
       {/* Requirement Form Overlay */}
       {showFaqForm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-3xl border border-neutral-100 bg-white p-8 shadow-2xl">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl my-auto rounded-3xl border border-neutral-100 bg-white p-8 shadow-2xl relative">
             <h2 className="text-2xl font-bold text-neutral-900">Requirements</h2>
             <p className="mt-2 text-neutral-500">Please provide the necessary information for the seller to start working.</p>
 
-            <div className="mt-8 space-y-6">
+            <div className="mt-8 space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
               {questions.length > 0 ? (
                 questions.map((q, i) => (
                   <div key={i}>

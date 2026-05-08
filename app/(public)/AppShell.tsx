@@ -25,7 +25,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const savedMode = window.localStorage.getItem("jobme.mode") as "buyer" | "seller" | null;
     if (isSellerRoute) {
       setMode("seller");
-    } else if (pathname?.startsWith("/chats")) {
+    } else if (
+      pathname?.startsWith("/chats") || 
+      pathname?.startsWith("/profile") || 
+      pathname?.startsWith("/profile-details")
+    ) {
       setMode(savedMode === "seller" ? "seller" : "buyer");
     } else {
       setMode("buyer");

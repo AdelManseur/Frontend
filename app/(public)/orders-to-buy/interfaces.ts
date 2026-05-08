@@ -28,6 +28,7 @@ export interface BuyerOrder {
   reported?: boolean;
   expectedDelivery: string;
   createdAt: string;
+  isRegular?: boolean;
 }
 
 export interface BuyerOrdersPagination {

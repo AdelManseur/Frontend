@@ -104,10 +104,11 @@ type ConversationResponse = {
 
 export async function ensureConversationExists(
   sellerId: string,
-  buyerId: string
+  buyerId: string,
+  gigId?: string
 ): Promise<string | null> {
   const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL : `${API_BASE_URL}/api`;
-  const body = { user1Id: sellerId, user2Id: buyerId };
+  const body = { user1Id: sellerId, user2Id: buyerId, gigId };
 
   // create if it doesn't exist. The backend will handle the logic to prevent duplicates.
   const createRes = await fetch(`${base}/chat/conv`, {

@@ -28,6 +28,7 @@ export interface OrderRequirement {
 
 export interface OrderDeliverable {
   files?: string[];
+  links?: string[];
   description?: string;
   deliveredAt?: string;
 }

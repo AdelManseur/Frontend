@@ -5,8 +5,9 @@ import { getBuyerOrders } from "./req-res";
 import { getMe } from "../req-res";
 import type { BuyerOrder, BuyerOrderStatus } from "./interfaces";
 import Link from "next/link";
-import { Loader2, PackageSearch, ShoppingBag, Clock, CheckCircle2, XCircle, RefreshCw, Truck, ShieldCheck } from "lucide-react";
+import { Loader2, PackageSearch, ShoppingBag, Clock, CheckCircle2, XCircle, RefreshCw, Truck, ShieldCheck, ArrowRight, Filter, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 
 const STATUS_OPTIONS: Array<{ label: string; value: "all" | BuyerOrderStatus; icon: any }> = [
   { label: "All",         value: "all",         icon: ShoppingBag },
@@ -18,18 +19,22 @@ const STATUS_OPTIONS: Array<{ label: string; value: "all" | BuyerOrderStatus; ic
   { label: "In Revision", value: "in_revision",  icon: RefreshCw },
 ];
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; dot: string }> = {
-  pending:     { bg: "rgba(251,191,36,0.12)",  color: "#FCD34D", dot: "#FCD34D" },
-  active:      { bg: "rgba(59,130,246,0.12)",  color: "#93C5FD", dot: "#93C5FD" },
-  delivered:   { bg: "rgba(124,58,237,0.12)",  color: "#C4B5FD", dot: "#C4B5FD" },
-  completed:   { bg: "rgba(52,211,153,0.12)",  color: "#6EE7B7", dot: "#6EE7B7" },
-  cancelled:   { bg: "rgba(239,68,68,0.12)",   color: "#FCA5A5", dot: "#FCA5A5" },
-  in_revision: { bg: "rgba(249,115,22,0.12)",  color: "#FDB07A", dot: "#FDB07A" },
+const STATUS_STYLE: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  pending:     { bg: "#F9FAFB", color: "#111827", border: "#E5E7EB", label: "Pending" },
+  active:      { bg: "#F3F4F6", color: "#111827", border: "#D1D5DB", label: "Active" },
+  delivered:   { bg: "#F3F4F6", color: "#111827", border: "#D1D5DB", label: "Delivered" },
+  completed:   { bg: "#111827", color: "#FFFFFF", border: "#111827", label: "Completed" },
+  cancelled:   { bg: "#FEF2F2", color: "#991B1B", border: "#FEE2E2", label: "Cancelled" },
+  in_revision: { bg: "#FFFBEB", color: "#92400E", border: "#FEF3C7", label: "Revision" },
 };
 
 function formatDate(value?: string) {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return new Date(value).toLocaleDateString(undefined, { 
+    year: "numeric", 
+    month: "short", 
+    day: "numeric" 
+  });
 }
 
 export default function BuyerOrdersPage() {
@@ -44,7 +49,6 @@ export default function BuyerOrdersPage() {
   const [idVerified, setIdVerified] = useState<boolean | null>(null);
   const limit = 10;
 
-  // Auth + verification check
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -78,190 +82,267 @@ export default function BuyerOrdersPage() {
     return () => { mounted = false; };
   }, [status, page, idVerified]);
 
-  // Loading skeleton
   if (idVerified === null || (isLoading && orders.length === 0)) {
     return (
-      <div className="max-w-5xl mx-auto p-8 text-white">
-        <div className="h-8 w-48 rounded-xl mb-3 animate-pulse" style={{ background: "rgba(255,255,255,0.06)" }} />
-        <div className="space-y-4 mt-8">
+      <div className="max-w-6xl mx-auto p-8 bg-white min-h-screen">
+        <div className="h-10 w-64 bg-gray-100 rounded-lg mb-8 animate-pulse" />
+        <div className="space-y-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-36 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }} />
+            <div key={i} className="h-40 bg-white border border-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
     );
   }
 
-  // Verification gate
   if (!idVerified) {
     return (
-      <div className="max-w-md mx-auto p-8 mt-24">
-        <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl shadow-neutral-200/50 border border-neutral-100">
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-8 flex items-center justify-center bg-neutral-50 text-neutral-900 border border-neutral-100 shadow-sm">
+      <div className="max-w-md mx-auto p-8 mt-24 bg-white">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-gray-200 p-10 text-center rounded-2xl shadow-sm"
+        >
+          <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center bg-gray-50 text-black border border-gray-200">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold mb-4 tracking-tight text-neutral-900">Identity Verification</h2>
-          <p className="text-sm text-neutral-500 mb-10 leading-relaxed max-w-[280px] mx-auto">
-            To ensure a secure marketplace, we require identity verification through the <span className="text-neutral-900 font-semibold">JobMe mobile app</span> before accessing orders.
+          <h2 className="text-xl font-bold mb-3 text-black">Identity Verification</h2>
+          <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+            Please verify your identity using the <strong className="text-black">JobMe mobile app</strong> to access your orders.
           </p>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Link 
               href="/verify-identity" 
-              className="flex items-center justify-center gap-2 w-full py-4 rounded-full font-semibold text-[15px] bg-neutral-900 text-white hover:bg-neutral-800 transition-all active:scale-[0.98] shadow-lg shadow-neutral-900/10"
+              className="block w-full py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-colors"
             >
               Verify Identity
             </Link>
             <Link 
               href="/browse" 
-              className="flex items-center justify-center w-full py-2 text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors"
+              className="block w-full py-2 text-sm font-medium text-gray-400 hover:text-black transition-colors"
             >
               Return to marketplace
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto text-white">
+    <div className="max-w-6xl mx-auto px-4 pb-20 bg-white min-h-screen">
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--jm-violet)" }}>Buyer</p>
-        <h1 className="text-3xl font-bold">Your Orders</h1>
-        <p className="text-[14px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>Track all orders you've placed as a buyer.</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12 mt-12"
+      >
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Account Dashboard</p>
+        <h1 className="text-4xl font-black text-black tracking-tighter mb-2">My Orders</h1>
+        <div className="h-1 w-12 bg-black rounded-full" />
+      </motion.div>
 
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {STATUS_OPTIONS.map(({ label, value, icon: Icon }) => {
-          const active = status === value;
-          return (
-            <button
-              key={value}
-              onClick={() => { setStatus(value); setPage(1); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all"
-              style={{
-                background: active ? "var(--jm-violet)" : "rgba(255,255,255,0.05)",
-                color: active ? "white" : "rgba(255,255,255,0.5)",
-                border: active ? "1px solid var(--jm-violet)" : "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          );
-        })}
-        <span className="ml-auto self-center text-[13px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-          {totalCount} order{totalCount !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      {error && <p className="text-red-400 text-[13px] mb-4">{error}</p>}
-
-      {/* Orders list */}
-      {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }} />
-          ))}
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="glass-card-dark p-12 text-center">
-          <ShoppingBag className="w-12 h-12 mx-auto mb-4" style={{ color: "rgba(255,255,255,0.2)" }} />
-          <h3 className="text-lg font-bold mb-1">No orders yet</h3>
-          <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.5)" }}>Browse gigs and place your first order.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => {
-            const sty = STATUS_STYLE[order.status] ?? { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", dot: "#888" };
+      {/* Filter Tabs - Monochrome Premium */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-gray-100 pb-6">
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_OPTIONS.map(({ label, value, icon: Icon }) => {
+            const active = status === value;
             return (
-              <Link
-                key={order._id}
-                href={`/orders-to-buy/${order._id}`}
-                className="block rounded-2xl overflow-hidden transition-all hover:translate-y-[-1px]"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+              <button
+                key={value}
+                onClick={() => { setStatus(value); setPage(1); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-bold transition-all
+                  ${active ? "bg-black text-white" : "bg-transparent text-gray-500 hover:text-black hover:bg-gray-50"}`}
               >
-                <div className="flex flex-col sm:flex-row gap-0">
-                  {/* Gig thumbnail */}
-                  <div className="w-full sm:w-48 h-36 flex-shrink-0 overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
-                    {order.gig.images?.[0] ? (
-                      <img src={order.gig.images[0]} alt={order.gig.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>No image</div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-                          Order #{order._id.slice(-8)}
-                        </p>
-                        <h2 className="text-[16px] font-bold text-white leading-snug">{order.gig.title}</h2>
-                        <p className="text-[12px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{order.gig.category}</p>
-                      </div>
-                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold flex-shrink-0" style={{ background: sty.bg, color: sty.color }}>
-                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: sty.dot }} />
-                        {order.status.replace("_", " ")}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-[13px]">
-                      {/* Seller */}
-                      <div className="flex items-center gap-2">
-                        <img src={order.seller.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"} alt={order.seller.name} className="w-6 h-6 rounded-full object-cover" />
-                        <span style={{ color: "rgba(255,255,255,0.7)" }}>{order.seller.name}</span>
-                      </div>
-                      {/* Price */}
-                      <span className="font-bold" style={{ color: "var(--jm-violet)" }}>{order.price?.toLocaleString()} DA</span>
-                      {/* Delivery */}
-                      <span style={{ color: "rgba(255,255,255,0.4)" }}>Due {formatDate(order.expectedDelivery)}</span>
-                      {/* Ordered at */}
-                      <span style={{ color: "rgba(255,255,255,0.3)" }}>Ordered {formatDate(order.createdAt)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {order.reported && (
-                  <div className="px-5 py-3 flex items-center gap-3" style={{ background: "rgba(239,68,68,0.08)", borderTop: "1px solid rgba(239,68,68,0.2)" }}>
-                    <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.25)", color: "#FCA5A5" }}>Reported</span>
-                    <Link href={`/orders-to-buy/report/${order.reportId ?? order._id}`} className="text-[13px] font-medium hover:underline" style={{ color: "#FCA5A5" }}>
-                      View your report →
-                    </Link>
-                  </div>
-                )}
-              </Link>
+                <Icon className="w-3.5 h-3.5" />
+                <span>{label}</span>
+              </button>
             );
           })}
         </div>
+        <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400">
+          <Filter className="w-3 h-3" />
+          <span>{totalCount} Active Projects</span>
+        </div>
+      </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-[13px] mb-8 font-bold flex items-center gap-3"
+        >
+          <XCircle className="w-4 h-4" />
+          {error}
+        </motion.div>
       )}
 
-      {/* Pagination */}
+      {/* Orders list - Black & White Aesthetic */}
+      <AnimatePresence mode="wait">
+        {isLoading && orders.length === 0 ? (
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-48 bg-gray-50 border border-gray-100 rounded-2xl animate-pulse" />
+            ))}
+          </motion.div>
+        ) : orders.length === 0 ? (
+          <motion.div 
+            key="empty"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-24 text-center border-2 border-dashed border-gray-100 rounded-3xl"
+          >
+            <div className="w-16 h-16 bg-gray-50 rounded-full mx-auto mb-6 flex items-center justify-center text-gray-300">
+              <ShoppingBag className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-black mb-2">No orders found</h3>
+            <p className="text-gray-400 max-w-xs mx-auto text-sm font-medium">Your purchase history is currently empty. Start exploring the marketplace!</p>
+            <Link href="/browse" className="inline-block mt-8 px-8 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-900 transition-colors">
+              Explore Gigs
+            </Link>
+          </motion.div>
+        ) : (
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {orders.map((order, index) => {
+              const sty = STATUS_STYLE[order.status] ?? { bg: "#F9FAFB", color: "#111827", border: "#E5E7EB", label: order.status };
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  key={order._id}
+                >
+                  <Link
+                    href={`/orders-to-buy/${order._id}`}
+                    className="block bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-black transition-all duration-300 group shadow-sm hover:shadow-xl hover:shadow-black/5"
+                  >
+                    <div className="flex flex-col lg:flex-row">
+                      {/* Left: Thumbnail */}
+                      <div className="w-full lg:w-72 h-52 lg:h-auto overflow-hidden relative border-r border-gray-50">
+                        {order.gig.images?.[0] ? (
+                          <img 
+                            src={order.gig.images[0]} 
+                            alt={order.gig.title} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                            <PackageSearch className="w-10 h-10 text-gray-200" />
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-widest text-white">
+                            {order.isRegular ? "Standard" : "Custom Offer"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right: Content */}
+                      <div className="flex-1 p-8 flex flex-col">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                              <span>Order #{order._id.slice(-8)}</span>
+                              <span className="w-1 h-1 rounded-full bg-gray-200" />
+                              <span>{formatDate(order.createdAt)}</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-black leading-tight mb-2 group-hover:underline decoration-black decoration-2 underline-offset-4">
+                              {order.gig.title}
+                            </h2>
+                            <p className="text-[13px] font-bold text-gray-400">{order.gig.category}</p>
+                          </div>
+
+                          <div className="flex flex-col md:items-end gap-3">
+                            <span 
+                              className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border"
+                              style={{ backgroundColor: sty.bg, color: sty.color, borderColor: sty.border }}
+                            >
+                              {sty.label}
+                            </span>
+                            <div className="text-3xl font-black text-black tracking-tighter">
+                              {order.price?.toLocaleString()} <span className="text-sm font-bold text-gray-400">DA</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-8">
+                            {/* Seller Mini Profile */}
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-100 bg-gray-50">
+                                <img 
+                                  src={order.seller.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"} 
+                                  alt={order.seller.name} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Seller</span>
+                                <span className="text-[14px] font-bold text-black">{order.seller.name}</span>
+                              </div>
+                            </div>
+
+                            {/* Deadline Info */}
+                            <div className="hidden sm:flex flex-col">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Due Date</span>
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5 text-black" />
+                                <span className="text-[14px] font-bold text-black">{formatDate(order.expectedDelivery)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-black font-black text-[12px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+                            View Project <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {order.reported && (
+                      <div className="px-8 py-3 bg-red-50 flex items-center justify-between border-t border-red-100">
+                        <div className="flex items-center gap-3 text-red-700">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span className="text-[11px] font-black uppercase tracking-widest">Active Dispute</span>
+                        </div>
+                        <span className="text-[12px] font-bold text-red-600 underline">Case Details &rarr;</span>
+                      </div>
+                    )}
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Pagination - Minimalist */}
       {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-between">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-16 flex items-center justify-center gap-4"
+        >
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1 || isLoading}
-            className="px-5 py-2 rounded-full text-[13px] font-semibold transition-all disabled:opacity-30"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            ← Previous
+            &larr;
           </button>
-          <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Page <span className="text-white font-bold">{page}</span> of <span className="text-white font-bold">{totalPages}</span>
-          </p>
+          <div className="flex items-center gap-2 font-black text-[14px]">
+            <span className="text-black">{page}</span>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-300">{totalPages}</span>
+          </div>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || isLoading}
-            className="px-5 py-2 rounded-full text-[13px] font-semibold transition-all disabled:opacity-30"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 hover:border-black hover:bg-black hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Next →
+            &rarr;
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );

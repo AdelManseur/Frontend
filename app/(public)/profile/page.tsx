@@ -100,7 +100,7 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-[2.5rem] p-10 border transition-all flex flex-col md:flex-row items-center md:items-start justify-between gap-8 ${
             isSellerMode 
-              ? 'bg-white/[0.03] border-white/10 shadow-2xl shadow-black/20' 
+              ? 'bg-white/[0.03] border-white/10 backdrop-blur-3xl shadow-2xl shadow-black/20' 
               : 'bg-white border-neutral-100 shadow-xl shadow-neutral-100/50'
           }`}
         >
@@ -115,36 +115,45 @@ export default function ProfilePage() {
                 src={user.pfp || "https://res.cloudinary.com/dztptq6q1/image/upload/v1756046508/user_rencds.png"}
                 alt={user.name}
                 className={`h-32 w-32 rounded-full object-cover border-4 shadow-md ring-1 ${
-                  isSellerMode ? 'border-[#0b1220] ring-white/10' : 'border-white ring-neutral-100'
+                  isSellerMode ? 'border-white/5 ring-white/10' : 'border-white ring-neutral-100'
                 }`}
               />
-              <div className={`absolute bottom-1 right-1 w-6 h-6 border-4 rounded-full ${isSellerMode ? 'bg-indigo-500 border-[#0b1220]' : 'bg-green-500 border-white'}`}></div>
+              <div className={`absolute bottom-1 right-1 w-6 h-6 border-4 rounded-full ${isSellerMode ? 'bg-indigo-500 border-white/10' : 'bg-green-500 border-white'}`}></div>
             </motion.div>
 
             <div className="pt-2">
-              <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-4 ${
-                isSellerMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-neutral-100 text-neutral-500'
-              }`}>
-                {user.isSeller ? "Seller Profile" : "Buyer Profile"}
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                  isSellerMode ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/20' : 'bg-neutral-100 text-neutral-500'
+                }`}>
+                  {user.isSeller ? "Elite Seller" : "Standard Buyer"}
+                </div>
+                {user.idVerified && (
+                   <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                    isSellerMode ? 'bg-green-500/20 text-green-400 border border-green-500/20' : 'bg-green-100 text-green-600'
+                  }`}>
+                    Verified
+                  </div>
+                )}
               </div>
-              <h1 className={`text-4xl font-bold tracking-tight mb-2 ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
+              <h1 className={`text-4xl font-black tracking-tighter mb-2 ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
                 {user.name}
               </h1>
-              <p className={`font-medium ${isSellerMode ? 'text-white/40' : 'text-neutral-500'}`}>{user.email}</p>
+              <p className={`font-medium text-sm ${isSellerMode ? 'text-gray-500' : 'text-neutral-500'}`}>{user.email}</p>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 min-w-[160px]">
             <Link
               href="/profile-details"
-              className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all active:scale-95 shadow-lg ${
+              className={`inline-flex items-center justify-center gap-3 rounded-xl px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg ${
                 isSellerMode 
                   ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20' 
                   : 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-neutral-900/10'
               }`}
             >
-              <Edit className="h-4 w-4" />
-              Edit Profile
+              <Edit className="h-3.5 w-3.5" />
+              Modify Profile
             </Link>
 
             <button
@@ -153,14 +162,14 @@ export default function ProfilePage() {
                   await logoutUser();
                 }
               }}
-              className={`inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-all active:scale-95 shadow-sm ${
+              className={`inline-flex items-center justify-center gap-3 rounded-xl border px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm ${
                 isSellerMode 
-                  ? 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10' 
+                  ? 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10' 
                   : 'border-red-200 bg-white text-red-600 hover:bg-red-50'
               }`}
             >
-              <LogOut className="h-4 w-4" />
-              Log Out
+              <LogOut className="h-3.5 w-3.5" />
+              Terminate Session
             </button>
           </div>
         </motion.div>
@@ -174,21 +183,21 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className={`rounded-3xl p-8 border shadow-sm ${
+            className={`rounded-[2.5rem] p-10 border shadow-sm backdrop-blur-xl ${
               isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
             }`}
           >
             <div className="flex items-center gap-3 mb-8">
-              <h2 className={`text-xl font-bold tracking-tight ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
-                Account Details
+              <h2 className={`text-xs font-black uppercase tracking-widest ${isSellerMode ? 'text-indigo-400' : 'text-neutral-900'}`}>
+                Identity Matrix
               </h2>
             </div>
             <div className="space-y-1">
-              <InfoRow mode={mode} label="Email Address" value={user.email} icon={Mail} />
-              <InfoRow mode={mode} label="Phone Number" value={user.phone} icon={Phone} />
+              <InfoRow mode={mode} label="Primary Contact" value={user.email} icon={Mail} />
+              <InfoRow mode={mode} label="Direct Line" value={user.phone} icon={Phone} />
               <InfoRow
                 mode={mode}
-                label="Date of Birth"
+                label="Chronology"
                 value={user.bday ? new Date(user.bday).toLocaleDateString() : ""}
                 icon={User}
               />
@@ -202,12 +211,12 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className={`rounded-3xl p-8 border shadow-sm ${
+              className={`rounded-[2.5rem] p-10 border shadow-sm backdrop-blur-xl ${
                 isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
               }`}
             >
-              <h2 className={`text-xl font-bold tracking-tight mb-6 ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>Location</h2>
-              <InfoRow mode={mode} label="Address" value={fullAddress} icon={MapPin} />
+              <h2 className={`text-xs font-black uppercase tracking-widest mb-8 ${isSellerMode ? 'text-indigo-400' : 'text-neutral-900'}`}>Station Address</h2>
+              <InfoRow mode={mode} label="Geographic Location" value={fullAddress} icon={MapPin} />
             </motion.section>
 
             {/* Interests */}
@@ -215,23 +224,23 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className={`rounded-3xl p-8 border shadow-sm ${
+              className={`rounded-[2.5rem] p-10 border shadow-sm backdrop-blur-xl ${
                 isSellerMode ? 'bg-white/[0.02] border-white/10' : 'bg-white border-neutral-100'
               }`}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className={`text-xl font-bold tracking-tight ${isSellerMode ? 'text-white' : 'text-neutral-900'}`}>
-                  Interests
+              <div className="flex items-center gap-3 mb-8">
+                <h2 className={`text-xs font-black uppercase tracking-widest ${isSellerMode ? 'text-indigo-400' : 'text-neutral-900'}`}>
+                  Specialized Fields
                 </h2>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {(user.fieldsOfInterest ?? []).length > 0 ? (
                   user.fieldsOfInterest?.map((item) => (
                     <span
                       key={item}
-                      className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors cursor-default ${
+                      className={`rounded-xl border px-4 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all cursor-default ${
                         isSellerMode 
-                          ? 'bg-white/5 border-white/10 text-white/60 hover:bg-indigo-500 hover:text-white hover:border-indigo-500' 
+                          ? 'bg-white/5 border-white/10 text-white/40 hover:bg-indigo-600 hover:text-white hover:border-indigo-600' 
                           : 'bg-neutral-50 border-neutral-100 text-neutral-600 hover:bg-neutral-900 hover:text-white hover:border-neutral-900'
                       }`}
                     >
@@ -239,7 +248,7 @@ export default function ProfilePage() {
                     </span>
                   ))
                 ) : (
-                  <p className={`text-sm ${isSellerMode ? 'text-white/20' : 'text-neutral-400'}`}>No interests selected yet.</p>
+                  <p className={`text-xs font-medium ${isSellerMode ? 'text-gray-700 italic' : 'text-neutral-400'}`}>No interests identified.</p>
                 )}
               </div>
             </motion.section>
@@ -248,4 +257,4 @@ export default function ProfilePage() {
       </div>
     </main>
   );
-}
+}

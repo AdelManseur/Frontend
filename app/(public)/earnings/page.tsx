@@ -56,7 +56,7 @@ export default function EarningsPage() {
       <h1 className="text-3xl font-bold mb-8">Earnings</h1>
 
       {/* Top Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Net Income */}
         <div className="glass-card-dark p-6 overflow-hidden relative">
           <div className="absolute -right-4 -top-4 opacity-10">
@@ -69,29 +69,15 @@ export default function EarningsPage() {
           </div>
         </div>
 
-        {/* Available for Withdrawal */}
-        <div className="glass-card-dark p-6 overflow-hidden relative" style={{ border: "1px solid var(--jm-violet)" }}>
-          <div className="absolute -right-4 -top-4 opacity-10">
-            <Wallet className="w-32 h-32" style={{ color: "var(--jm-violet)" }} />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-[12px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--jm-violet)" }}>Available for Withdrawal</h3>
-            <p className="text-4xl font-bold mb-4">{earningsData.availableForWithdrawal.toLocaleString()} <span className="text-2xl font-semibold" style={{ color: "var(--jm-violet)" }}>DA</span></p>
-            <button className="w-full py-2.5 rounded-full font-bold text-sm transition-all hover:brightness-110" style={{ background: "var(--jm-violet)", color: "white" }}>
-              Withdraw Balance
-            </button>
-          </div>
-        </div>
-
-        {/* Withdrawn */}
+        {/* Total Orders (New card to replace withdrawal) */}
         <div className="glass-card-dark p-6 overflow-hidden relative">
           <div className="absolute -right-4 -top-4 opacity-10">
-            <ArrowUpRight className="w-32 h-32 text-pink-500" />
+            <PackageCheck className="w-32 h-32 text-indigo-500" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-[12px] font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Withdrawn</h3>
-            <p className="text-4xl font-bold mb-1">{earningsData.withdrawn.toLocaleString()} <span className="text-2xl font-semibold text-pink-400">DA</span></p>
-            <p className="text-[13px] text-pink-400">Total withdrawn</p>
+            <h3 className="text-[12px] font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>Total Completed</h3>
+            <p className="text-4xl font-bold mb-1">{earningsData.completedOrdersCount} <span className="text-2xl font-semibold text-indigo-400">Orders</span></p>
+            <p className="text-[13px] text-indigo-400">Successfully delivered</p>
           </div>
         </div>
       </div>

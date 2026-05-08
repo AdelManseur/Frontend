@@ -88,6 +88,8 @@ export async function getSellerConversations(userId: string): Promise<SellerConv
         return {
             convId,
             otherUser,
+            gigId: typeof conversation === "string" ? undefined : conversation.gigId,
+            orderId: typeof conversation === "string" ? undefined : (conversation as any).orderId,
             createdAt: typeof conversation === "string" ? undefined : conversation.createdAt,
         } as SellerConversationListItem;
     })

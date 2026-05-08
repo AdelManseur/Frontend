@@ -75,13 +75,17 @@ export default function ChatsLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className={`flex h-[calc(100vh-64px)] overflow-hidden ${isSeller ? "bg-[#0b0f1a]" : "bg-[#f0f2f5]"}`}>
+    <div className={`flex h-[calc(100vh-64px)] overflow-hidden bg-transparent`}>
 
       {/* ── Left Sidebar ── */}
-      <aside className={`flex w-[300px] flex-shrink-0 flex-col ${isSeller ? "bg-[#141a28] border-r border-white/[0.06]" : "bg-white border-r border-neutral-200"}`}>
+      <aside className={`flex w-[300px] flex-shrink-0 flex-col transition-all duration-300 ${
+        isSeller 
+          ? "bg-[#0D0D1A]/60 backdrop-blur-xl border-r border-white/[0.05]" 
+          : "bg-white border-r border-neutral-200"
+      }`}>
 
         {/* Profile strip + title */}
-        <div className={`flex items-center justify-between px-4 py-4 ${isSeller ? "border-b border-white/[0.06]" : "border-b border-neutral-100"}`}>
+        <div className={`flex items-center justify-between px-4 py-4 ${isSeller ? "border-b border-white/[0.05]" : "border-b border-neutral-100"}`}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-semibold text-sm"
               style={{ background: isSeller ? "rgba(99,102,241,0.25)" : "#e5e7eb", color: isSeller ? "#818cf8" : "#374151" }}>
@@ -99,7 +103,7 @@ export default function ChatsLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Search */}
-        <div className={`px-3 py-2.5 ${isSeller ? "border-b border-white/[0.06]" : "border-b border-neutral-100"}`}>
+        <div className={`px-3 py-2.5 ${isSeller ? "border-b border-white/[0.05]" : "border-b border-neutral-100"}`}>
           <div className="relative">
             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isSeller ? "text-white/30" : "text-neutral-400"}`} />
             <input
@@ -140,8 +144,13 @@ export default function ChatsLayout({ children }: { children: React.ReactNode })
           ) : (
             <div className="flex flex-col pt-1 pb-2">
               {filtered.map(item => {
-                const href = `/chats/${item.otherUser._id}`;
-                const active = pathname?.startsWith(href);
+                let href = `/chats/${item.otherUser._id}`;
+                if (item.orderId) href += `?orderId=${item.orderId}`;
+                else if (item.gigId) href += `?gigId=${item.gigId}`;
+
+                const active = pathname?.startsWith(`/chats/${item.otherUser._id}`) && 
+                  (!item.orderId || pathname?.includes(`orderId=${item.orderId}`)) &&
+                  (!item.gigId || pathname?.includes(`gigId=${item.gigId}`));
                 const initial = (item.otherUser.name || "?").charAt(0).toUpperCase();
 
                 return (

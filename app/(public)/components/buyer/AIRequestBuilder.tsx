@@ -56,13 +56,18 @@ export default function AIRequestBuilder({
   const [isDone, setIsDone] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
+    if (isOpen && messages.length === 0 && !initializedRef.current) {
+      initializedRef.current = true;
       // Initialize with intent step
       startStep("intent", "Hi! I'm here to help you write a great request. First, what do you need from the seller?");
     }
-  }, [isOpen]);
+    if (!isOpen) {
+      initializedRef.current = false;
+    }
+  }, [isOpen, messages.length]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -174,18 +179,19 @@ export default function AIRequestBuilder({
     if (!finalMessage.trim()) return;
     setIsSending(true);
     try {
-      const convId = await ensureConversationExists(sellerId, buyerId);
+      const convId = await ensureConversationExists(sellerId, buyerId, gigContext.gigId);
       if (!convId) throw new Error("Failed to create conversation");
 
       await sendMessageToSeller({
         from: buyerId,
         to: sellerId,
-        content: finalMessage
+        content: finalMessage,
+        gigId: gigContext.gigId
       });
 
       setIsDone(true);
       setTimeout(() => {
-        router.push(`/chats?convId=${convId}`);
+        router.push(`/chats/${sellerId}?gigId=${gigContext.gigId}`);
         onClose();
       }, 1500);
     } catch (err) {

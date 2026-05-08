@@ -58,7 +58,7 @@ export default function HowItWorksPage() {
       num: '04', 
       icon: DollarSign, 
       title: 'Get Paid', 
-      desc: 'Withdraw your earnings securely once the buyer approves your delivery.' 
+      desc: 'Receive your cleared earnings automatically once the buyer approves your delivery.' 
     },
   ];
 

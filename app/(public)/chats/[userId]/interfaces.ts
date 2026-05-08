@@ -16,6 +16,8 @@ export interface ChatMessage {
   content: string;
   type?: MessageType;
   offer?: ICustomOffer;
+  gigId?: string;
+  orderId?: string;
   createdAt: string;
   read: boolean;
 }

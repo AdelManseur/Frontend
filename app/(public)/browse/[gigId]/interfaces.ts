@@ -66,6 +66,7 @@ export interface SendMessagePayload {
   from: string;
   to: string;
   content: string;
+  gigId?: string;
 }
 
 export interface SendMessageResponse {
