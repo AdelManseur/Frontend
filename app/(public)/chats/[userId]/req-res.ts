@@ -133,6 +133,7 @@ type SendMessagePayload = {
   to: string;
   content: string;
   gigId?: string;
+  orderId?: string;
 };
 
 type SendMessageResponse = {
@@ -185,7 +186,7 @@ export async function markMessageAsRead(messageId: string): Promise<MarkMessageR
     throw new Error(`Failed to mark message as read (${res.status})`);
   }
 
-  return data;
+  return data as MarkMessageReadResponse;
 }
 
 export async function getSpecificConversation(

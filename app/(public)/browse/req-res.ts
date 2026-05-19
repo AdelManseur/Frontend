@@ -152,3 +152,25 @@ export async function getGigCategories(): Promise<string[]> {
   if (!response.ok) return [];
   return data?.categories ?? [];
 }
+
+export async function getRecommendations(): Promise<{
+  gigs: any[];
+  source: "personalized" | "interests" | "trending";
+  count: number;
+} | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) return null; // 401 = not logged in → silently return null
+
+    const raw = await response.text();
+    const isJson = (response.headers.get("content-type") || "").includes("application/json");
+    const data = isJson && raw ? JSON.parse(raw) : null;
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}

@@ -38,7 +38,7 @@ export default function MessagesSection({ messages = [] }: MessagesSectionProps)
           </div>
         </div>
 
-        <div className="divide-y" style={{ divideColor: "var(--jm-seller-border)" }}>
+        <div className="divide-y" style={{ borderColor: "var(--jm-seller-border)" }}>
           {displayedMessages.map(msg => (
             <div 
               key={msg._id} 

@@ -34,7 +34,7 @@ export default function OrdersSection({ orders = [] }: OrdersSectionProps) {
             </div>
           </div>
         ) : (
-          <div className="divide-y" style={{ divideColor: "var(--jm-seller-border)" }}>
+          <div className="divide-y" style={{ borderColor: "var(--jm-seller-border)" }}>
             {orders.map((order, idx) => (
               <div 
                 key={order._id || idx} 

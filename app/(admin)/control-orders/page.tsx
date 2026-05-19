@@ -135,8 +135,8 @@ export default function ControlOrdersPage() {
                       <tr key={key}>
                         <td>{o.orderNumber || o._id || o.id || "-"}</td>
                         {/*<td>{o.title || "-"}</td>*/}
-                        <td>{o.buyerName || o.buyer._id || "-"}</td>
-                        <td>{o.sellerName || o.seller._id || "-"}</td>
+                        <td>{o.buyerName || (o as any).buyer?._id || "-"}</td>
+                        <td>{o.sellerName || (o as any).seller?._id || "-"}</td>
                         <td>{o.status}</td>
                         <td>{Number(o.price || 0).toLocaleString()} DA</td>
                         <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : "-"}</td>

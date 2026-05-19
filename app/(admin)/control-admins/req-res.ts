@@ -24,7 +24,7 @@ export async function listAdmins(token: string): Promise<AdminItem[]> {
     | null;
 
   if (!res.ok) {
-    throw new Error(json?.message || "Failed to fetch admins.");
+    throw new Error((json as any)?.message || "Failed to fetch admins.");
   }
 
   if (Array.isArray(json)) return json;

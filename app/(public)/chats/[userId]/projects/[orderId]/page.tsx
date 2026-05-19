@@ -94,6 +94,7 @@ export default function SellerProjectChatPage() {
     orderId: String(raw?.orderId ?? raw?.order?._id ?? fallback.orderId),
     content: String(raw?.content ?? raw?.message ?? fallback.content),
     createdAt: raw?.createdAt ?? raw?.created_at ?? fallback.createdAt,
+    read: Boolean(raw?.read ?? fallback.read),
   });
 
   async function onSend(e: React.FormEvent) {
@@ -108,6 +109,7 @@ export default function SellerProjectChatPage() {
       orderId,
       content,
       createdAt: new Date().toISOString(),
+      read: false,
     };
 
     try {

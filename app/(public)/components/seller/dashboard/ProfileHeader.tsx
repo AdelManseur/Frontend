@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Avatar from "../../ui/Avatar";
 import { CalendarCheck, ChevronDown, Star, Shield, Award, Zap } from "lucide-react";
-import type { MeResponse } from "../../../../interfaces";
+import type { MeResponse } from "../../../interfaces";
 
 const LEVEL_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
   new_seller: { label: "New Seller", icon: Star, color: "#C4B5FD", bg: "rgba(124,58,237,0.2)" },

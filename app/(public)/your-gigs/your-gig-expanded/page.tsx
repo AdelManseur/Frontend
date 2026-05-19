@@ -52,21 +52,21 @@ function EditGigForm({ gig, onCancel, onSaved }: { gig: SellerGig, onCancel: () 
     tags: gig.tags || [],
     price: {
       basic: { 
-        title: gig.price.basic.title || "", 
+        title: (gig.price.basic as any).title || "", 
         description: gig.price.basic.description || "", 
         price: gig.price.basic.price.toString(), 
         deliveryDays: gig.price.basic.deliveryTime.toString(), 
         revisions: gig.price.basic.revisions.toString() 
       },
       standard: { 
-        title: gig.price.standard?.title || "", 
+        title: (gig.price.standard as any)?.title || "", 
         description: gig.price.standard?.description || "", 
         price: gig.price.standard?.price?.toString() || "", 
         deliveryDays: gig.price.standard?.deliveryTime?.toString() || "", 
         revisions: gig.price.standard?.revisions?.toString() || "" 
       },
       premium: { 
-        title: gig.price.premium?.title || "", 
+        title: (gig.price.premium as any)?.title || "", 
         description: gig.price.premium?.description || "", 
         price: gig.price.premium?.price?.toString() || "", 
         deliveryDays: gig.price.premium?.deliveryTime?.toString() || "", 
@@ -413,7 +413,7 @@ export default function YourGigExpandedPage() {
            {/* Primary Visual */}
            <div className="w-full lg:w-[45%] flex-shrink-0">
               <div className="relative aspect-[16/10] rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-2xl">
-                 <img src={gig.images[0]} className="w-full h-full object-cover" alt={gig.title} />
+                 <img src={gig.images?.[0] || ""} className="w-full h-full object-cover" alt={gig.title} />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                  <div className="absolute bottom-8 left-8 flex items-center gap-4">
                     <div className="px-4 py-2 bg-indigo-500/90 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest">
@@ -422,7 +422,7 @@ export default function YourGigExpandedPage() {
                  </div>
               </div>
               <div className="grid grid-cols-4 gap-4 mt-4">
-                 {gig.images.slice(1, 5).map((img, i) => (
+                 {(gig.images || []).slice(1, 5).map((img, i) => (
                    <div key={i} className="aspect-video rounded-xl overflow-hidden border border-white/5 bg-white/5">
                       <img src={img} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" />
                    </div>
@@ -445,7 +445,7 @@ export default function YourGigExpandedPage() {
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-600">Client Rating</span>
                     <div className="flex items-center gap-2">
                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                       <span className="text-xl font-black">{typeof gig.rating === 'number' ? gig.rating.toFixed(1) : (gig.rating as any)?.average?.toFixed(1) || "5.0"}</span>
+                       <span className="text-xl font-black">{typeof (gig.rating as any) === 'number' ? (gig.rating as any).toFixed(1) : (gig.rating as any)?.average?.toFixed(1) || "5.0"}</span>
                     </div>
                  </div>
                  <div className="space-y-1">
@@ -464,7 +464,7 @@ export default function YourGigExpandedPage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                 {gig.tags.map(tag => (
+                 {(gig.tags || []).map(tag => (
                    <span key={tag} className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-[11px] font-bold text-gray-400 hover:text-white hover:border-white/20 transition-all cursor-default">
                      # {tag}
                    </span>
@@ -529,7 +529,7 @@ export default function YourGigExpandedPage() {
                             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-indigo-400 transition-colors">{tier} Plan</span>
                             <span className="text-lg font-black text-white">{data.price.toLocaleString()} DA</span>
                          </div>
-                         <h3 className="text-white font-bold mb-3">{data.title || `${tier} Package`}</h3>
+                         <h3 className="text-white font-bold mb-3">{(data as any).title || `${tier} Package`}</h3>
                          <p className="text-gray-500 text-[13px] leading-relaxed mb-6 line-clamp-3">{data.description}</p>
                          <div className="flex items-center gap-6 pt-6 border-t border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
                             <div className="flex items-center gap-2">

@@ -16,10 +16,7 @@ export async function getSellerReportDetails(reportId: string): Promise<GetSelle
     credentials: "include",
   });
 
-  const data = (await res.json().catch(() => null)) as
-    | GetSellerReportDetailsResponse
-    | ErrorResponse
-    | null;
+  const data = (await res.json().catch(() => null)) as any;
 
   if (!res.ok) {
     throw new Error(data?.message || data?.error || `Failed to fetch report (${res.status})`);

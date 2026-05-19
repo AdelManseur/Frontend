@@ -15,6 +15,7 @@ import {
   Layout,
   DollarSign,
   FileText,
+  Clock,
   Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, ChevronRight, Star, Check, Play, Menu, X, Loader2 } from 'lucide-react';
+import { Search, ChevronRight, Star, Check, Play, Menu, X, Loader2, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence, Variants } from 'motion/react';
 import Image from 'next/image';
@@ -26,8 +26,10 @@ interface Gig {
     pfp?: string;
     rating?: number;
   };
-  rating?: number;
-  totalReviews?: number;
+  rating?: {
+    average: number;
+    count: number;
+  };
 }
 
 interface GigsResponse {
@@ -41,7 +43,8 @@ interface GigsResponse {
   };
 }
 
-// ─── API ──────────────────────────────────────────────────────────────────────
+import { API_BASE_URL } from "@/lib/api-config";
+
 async function fetchGigs(params: Record<string, string | number>): Promise<GigsResponse> {
   const qs = new URLSearchParams(
     Object.entries(params)
@@ -49,7 +52,7 @@ async function fetchGigs(params: Record<string, string | number>): Promise<GigsR
       .map(([k, v]) => [k, String(v)])
   ).toString();
 
-  const res = await fetch(`/api/gigs${qs ? `?${qs}` : ''}`);
+  const res = await fetch(`${API_BASE_URL}/api/gigs${qs ? `?${qs}` : ''}`);
   console.log("Fetching gigs with params:", params, "URL:", res.url, "Status:", res.status);
   if (!res.ok) throw new Error('Failed to fetch gigs');
   return res.json();
@@ -60,62 +63,74 @@ async function fetchGigs(params: Record<string, string | number>): Promise<GigsR
 
 // ─── Gig Card ─────────────────────────────────────────────────────────────────
 const GigCard = ({ gig, variants }: { gig: Gig; variants: Variants }) => {
-  const image = gig.images?.[0];
+  const image = gig.images?.[0] || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80";
   const price = gig.price?.basic?.price;
   const sellerName = gig.seller?.name ?? 'Seller';
-  const sellerAvatar = gig.seller?.pfp;
 
   return (
     <motion.a
       variants={variants}
-      href={`/gigs/${gig._id}`}
-      className="group flex flex-col gap-5 p-4 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-neutral-200/50 transition-all duration-300"
+      href={`/browse/${gig._id}`}
+      className="group block"
     >
-      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 relative">
-        {image ? (
+      <article
+        className="overflow-hidden rounded-2xl h-full flex flex-col transition-all duration-300 group-hover:-translate-y-1"
+        style={{ 
+          background: "rgba(255,255,255,0.65)", 
+          backdropFilter: "blur(16px)", 
+          WebkitBackdropFilter: "blur(16px)", 
+          border: "1px solid rgba(255,255,255,0.85)", 
+          boxShadow: "0 4px 20px rgba(124,58,237,0.06)" 
+        }}
+        onMouseEnter={e => { 
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 12px 40px rgba(124,58,237,0.22)"; 
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(124,58,237,0.25)"; 
+        }}
+        onMouseLeave={e => { 
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.06)"; 
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.85)"; 
+        }}
+      >
+        <div className="relative h-44 w-full overflow-hidden">
           <Image
             src={image}
             alt={gig.title}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"
           />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-sm font-medium">
-            No image
-          </div>
-        )}
-      </div>
-      <div className="px-1">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 relative">
-            {sellerAvatar ? (
-              <Image src={sellerAvatar} alt={sellerName} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-neutral-500">
-                {sellerName[0]?.toUpperCase()}
-              </div>
-            )}
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-neutral-900">{sellerName}</span>
+          <button
+            className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm hover:scale-110 transition-transform"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <Heart className="w-5 h-5 text-neutral-400" />
+          </button>
         </div>
-        <h3 className="text-lg font-medium tracking-tight text-neutral-800 mb-3 leading-snug group-hover:text-neutral-900 transition-colors line-clamp-2">
-          {gig.title}
-        </h3>
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100">
-          <div className="flex items-center gap-1.5">
-            <Star className="w-4 h-4 fill-neutral-900 text-neutral-900" />
-            <span className="text-sm font-bold tracking-tight text-neutral-900">
-              {gig.rating?.toFixed(1) ?? '—'}
+        <div className="p-5 flex flex-col flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.1)", color: "var(--jm-violet)" }}>
+              {gig.category}
             </span>
-            {gig.totalReviews != null && (
-              <span className="text-sm text-neutral-400 font-medium">({gig.totalReviews})</span>
-            )}
+            <div className="flex items-center gap-1 text-sm font-bold" style={{ color: "var(--jm-text)" }}>
+              <Star className="w-3.5 h-3.5" style={{ color: "var(--jm-pink)", fill: "var(--jm-pink)" }} />
+              {gig.rating?.average?.toFixed(1) ?? "0.0"}
+              <span className="font-normal text-xs" style={{ color: "var(--jm-muted)" }}>
+                ({gig.rating?.count ?? 0})
+              </span>
+            </div>
           </div>
-          {price != null && (
-            <span className="text-lg font-bold tracking-tight text-neutral-900">{price} DA</span>
-          )}
+          <h3 className="text-[15px] font-semibold leading-snug line-clamp-2 mb-2 group-hover:underline" style={{ color: "var(--jm-text)" }}>
+            {gig.title}
+          </h3>
+          <div className="mt-auto pt-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(124,58,237,0.08)" }}>
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--jm-muted)" }}>
+              Starting at
+            </span>
+            <span className="text-lg font-extrabold" style={{ color: "var(--jm-violet)" }}>
+              {price || 0} DA
+            </span>
+          </div>
         </div>
-      </div>
+      </article>
     </motion.a>
   );
 };
@@ -163,8 +178,19 @@ const SearchResults = ({
     </div>
 
     {loading && gigs.length === 0 && (
-      <div className="flex items-center justify-center py-32">
-        <Loader2 className="w-8 h-8 text-neutral-400 animate-spin" />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div 
+            key={i} 
+            className="animate-pulse rounded-2xl overflow-hidden" 
+            style={{ 
+              background: "rgba(255,255,255,0.5)", 
+              backdropFilter: "blur(16px)", 
+              border: "1px solid rgba(255,255,255,0.8)", 
+              height: "320px" 
+            }} 
+          />
+        ))}
       </div>
     )}
 
@@ -185,7 +211,7 @@ const SearchResults = ({
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {gigs.map((gig) => (
             <GigCard key={gig._id} gig={gig} variants={variants} />

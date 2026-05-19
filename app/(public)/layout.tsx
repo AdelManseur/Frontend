@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
+import SmoothScroll from "./components/SmoothScroll";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         style={{ fontFamily: "var(--font-jakarta, 'Plus Jakarta Sans', system-ui, sans-serif)" }}
         suppressHydrationWarning
       >
-        <AppShell>{children}</AppShell>
+        <SmoothScroll>
+          <AppShell>{children}</AppShell>
+        </SmoothScroll>
       </body>
     </html>
   );

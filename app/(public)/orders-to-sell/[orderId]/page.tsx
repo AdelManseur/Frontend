@@ -247,7 +247,7 @@ export default function SellerOrderExpandedPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Type</p>
-                <p className="text-xl font-black text-white">{order.isRegular ? "Package" : "Custom"}</p>
+                <p className="text-xl font-black text-white">{(order as any).isRegular ? "Package" : "Custom"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Deadline</p>

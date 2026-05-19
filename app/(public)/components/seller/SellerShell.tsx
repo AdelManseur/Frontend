@@ -16,7 +16,7 @@ export default function SellerShell({ children, session }: SellerShellProps) {
 
   return (
     <div
-      className="relative flex h-screen overflow-hidden"
+      className="relative flex min-h-screen"
       style={{ background: "var(--jm-seller-bg)", fontFamily: "var(--font-body, 'Plus Jakarta Sans', system-ui, sans-serif)" }}
     >
       {/* ── Seller particles — brighter/denser ── */}
@@ -29,14 +29,14 @@ export default function SellerShell({ children, session }: SellerShellProps) {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <SellerSidebar session={session} />
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0">
         <SellerTopBar session={session} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto">
             {children}
           </div>

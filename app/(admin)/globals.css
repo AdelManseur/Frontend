@@ -1,26 +1,70 @@
 @import "tailwindcss";
 
+/* ─── Admin Design Tokens (Apple Professional) ────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Typography */
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Core Palette */
+  --admin-bg:         #000000;
+  --admin-surface:    #1D1D1F;
+  --admin-surface-2:  #2D2D2F;
+  --admin-text:       #F5F5F7;
+  --admin-muted:      #86868B;
+  
+  /* Accent (Professional Blue) */
+  --admin-accent:     #0071E3;
+  --admin-accent-hover: #0077ED;
+  
+  /* Glassmorphism (Subtle Apple Style) */
+  --admin-glass-bg:     rgba(29, 29, 31, 0.72);
+  --admin-glass-border: rgba(255, 255, 255, 0.1);
+  --admin-glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+
+  /* Shared */
+  --admin-radius:     12px;
+  --admin-radius-lg:  20px;
+}
+
+/* ─── Reset & Base ───────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Admin Professional Card ───────────────────────────────────────── */
+.admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-glass-border);
+  border-radius: var(--admin-radius-lg);
+  transition: border-color 0.3s ease;
+}
+
+.admin-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Scrollbar (Minimalist) ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--admin-bg);
+  --color-foreground: var(--admin-text);
+  --font-sans: var(--font-body);
+  --font-mono: 'SF Mono', 'Geist Mono', monospace;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/*body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}*/
